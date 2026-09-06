@@ -41,19 +41,47 @@ namespace Jellyfin.Plugin.Simkl
         /// <inheritdoc />
         public override void UpdateConfiguration(BasePluginConfiguration configuration)
         {
-            // The admin page links an account by saving the whole configuration
-            // with the new token in it. What was cached about the previous
-            // account must not survive that.
+            // The admin page posts back the whole configuration it loaded, which
+            // may be minutes old. The fields below are written by the server
+            // (Simkl account details, scrobble and sync state) and the current
+            // values win over that copy; only what the page edits is taken from it.
             if (configuration is PluginConfiguration incoming)
             {
                 foreach (var next in incoming.UserConfigs)
                 {
                     var current = Configuration.GetByGuid(next.Id);
-                    if (current != null
-                        && !string.IsNullOrEmpty(next.UserToken)
-                        && !string.Equals(current.UserToken, next.UserToken, StringComparison.Ordinal))
+                    if (current == null)
                     {
+                        continue;
+                    }
+
+                    next.LastScrobble = current.LastScrobble;
+                    next.LastScrobbleUrl = current.LastScrobbleUrl;
+                    next.LastRewatch = current.LastRewatch;
+                    next.ImportInitialDone = current.ImportInitialDone;
+                    next.ImportShowsStamp = current.ImportShowsStamp;
+                    next.ImportMoviesStamp = current.ImportMoviesStamp;
+                    next.ImportLastCheckUtc = current.ImportLastCheckUtc;
+                    next.ImportLastReport = current.ImportLastReport;
+                    next.ExportInitialDone = current.ExportInitialDone;
+                    next.ExportLastReport = current.ExportLastReport;
+
+                    var sameToken = string.Equals(current.UserToken, next.UserToken, StringComparison.Ordinal);
+                    if (sameToken)
+                    {
+                        next.SimklUserName = current.SimklUserName;
+                        next.SimklAccountId = current.SimklAccountId;
+                        next.AccountType = current.AccountType;
+                        next.AccountTypeCheckedUtc = current.AccountTypeCheckedUtc;
+                        next.SettingsStamp = current.SettingsStamp;
+                        next.LinkExpired = current.LinkExpired;
+                    }
+                    else
+                    {
+                        // A new token (or a log out): what was cached about the
+                        // previous account must not survive it.
                         next.ForgetCachedAccount();
+                        next.LinkExpired = false;
                     }
                 }
             }
