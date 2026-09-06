@@ -284,7 +284,12 @@ namespace Jellyfin.Plugin.Simkl.Services
 
             lock (_stateLock)
             {
-                var state = LoadState().For(userId);
+                var state = LoadState().Peek(userId);
+                if (state == null)
+                {
+                    return status;
+                }
+
                 status.PendingConfirmation = state.PendingConfirmation;
                 status.UnmatchedCount = state.Unmatched.Count;
                 status.ImportedCount = state.Imported.Count;
@@ -423,14 +428,17 @@ namespace Jellyfin.Plugin.Simkl.Services
                     }
                 }
 
-                var activity = await _simklApi.GetImportActivityAsync(config.UserToken, manual).ConfigureAwait(false);
+                var activity = await _simklApi.GetImportActivityAsync(config.UserToken, fresh: true).ConfigureAwait(false);
                 if (activity.Unauthorized)
                 {
                     report.Message = "Simkl rejected the saved login; link again.";
                     return report;
                 }
 
-                config.ImportLastCheckUtc = DateTime.UtcNow;
+                if (mode == ImportMode.Delta)
+                {
+                    config.ImportLastCheckUtc = DateTime.UtcNow;
+                }
 
                 var readShows = true;
                 var readMovies = true;
@@ -538,6 +546,12 @@ namespace Jellyfin.Plugin.Simkl.Services
                         state.Unmatched.Clear();
                     }
 
+                    var known = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var existing in state.Unmatched)
+                    {
+                        known.Add(existing.Key());
+                    }
+
                     foreach (var unmatched in plan.Unmatched)
                     {
                         if (state.Unmatched.Count >= MaxUnmatched)
@@ -545,7 +559,10 @@ namespace Jellyfin.Plugin.Simkl.Services
                             break;
                         }
 
-                        state.Unmatched.Add(unmatched);
+                        if (known.Add(unmatched.Key()))
+                        {
+                            state.Unmatched.Add(unmatched);
+                        }
                     }
 
                     state.PendingConfirmation = 0;
@@ -585,7 +602,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Simkl import ({Mode}) failed for {UserId}", report.Mode, userId);
-                report.Message = "The import failed: " + ex.Message;
+                report.Message = "The import failed; see the server log for details.";
                 return report;
             }
             finally
@@ -655,7 +672,7 @@ namespace Jellyfin.Plugin.Simkl.Services
                         }
 
                         plan.Present.Add(item.Id);
-                        if (_libraryFilter.IsExcluded(config, item.Path))
+                        if (!config.ScrobbleShows || _libraryFilter.IsExcluded(config, item.Path))
                         {
                             plan.Excluded++;
                             continue;
@@ -713,7 +730,7 @@ namespace Jellyfin.Plugin.Simkl.Services
                 }
 
                 plan.Present.Add(item.Id);
-                if (_libraryFilter.IsExcluded(config, item.Path))
+                if (!config.ScrobbleMovies || _libraryFilter.IsExcluded(config, item.Path))
                 {
                     plan.Excluded++;
                     continue;
@@ -1087,12 +1104,14 @@ namespace Jellyfin.Plugin.Simkl.Services
                 }
 
                 var sent = 0;
+                var complete = true;
                 foreach (var history in plan.Batches)
                 {
                     var response = await _simklApi.AddToHistory(history, config.UserToken).ConfigureAwait(false);
                     if (response == null)
                     {
-                        report.Message = string.Format(CultureInfo.InvariantCulture, "Simkl stopped accepting the history after {0} item(s); the rest was not sent. Try again later.", sent);
+                        complete = false;
+                        report.Message = string.Format(CultureInfo.InvariantCulture, "Simkl stopped accepting the history after {0} item(s); the rest was not sent. Run the export again later.", sent);
                         break;
                     }
 
@@ -1127,8 +1146,12 @@ namespace Jellyfin.Plugin.Simkl.Services
                         plan.NoIdsEpisodes + plan.NoIdsMovies);
                 }
 
-                report.Applied = true;
-                config.ExportInitialDone = true;
+                report.Applied = sent > 0 || complete;
+                if (complete)
+                {
+                    config.ExportInitialDone = true;
+                }
+
                 config.ExportLastReport = string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd HH:mm} UTC: {1}", DateTime.UtcNow, report.Message);
                 SimklPlugin.Instance?.SaveConfiguration();
                 _logger.LogInformation("Simkl export for {UserId}: {Message}", userId, report.Message);
@@ -1137,7 +1160,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Simkl export failed for {UserId}", userId);
-                report.Message = "The export failed: " + ex.Message;
+                report.Message = "The export failed; see the server log for details.";
                 return report;
             }
             finally
@@ -1170,12 +1193,13 @@ namespace Jellyfin.Plugin.Simkl.Services
                     continue;
                 }
 
-                if (_libraryFilter.IsExcluded(config, item.Path))
+                var isMovieItem = item is MediaBrowser.Controller.Entities.Movies.Movie;
+                if ((isMovieItem ? !config.ScrobbleMovies : !config.ScrobbleShows) || _libraryFilter.IsExcluded(config, item.Path))
                 {
                     continue;
                 }
 
-                var watchedAt = _userDataManager.GetUserData(user, item)?.LastPlayedDate;
+                var watchedAt = AsUtc(_userDataManager.GetUserData(user, item)?.LastPlayedDate);
                 if (item is MediaBrowser.Controller.Entities.Movies.Movie)
                 {
                     var ids = PickIds(item.ProviderIds, _movieIdKeys);
@@ -1293,6 +1317,18 @@ namespace Jellyfin.Plugin.Simkl.Services
             }
 
             return plan;
+        }
+
+        private static DateTime? AsUtc(DateTime? value)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            return value.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+                : value.Value.ToUniversalTime();
         }
 
         private static Dictionary<string, string> PickIds(Dictionary<string, string>? providerIds, string[] keys)
@@ -1597,6 +1633,11 @@ namespace Jellyfin.Plugin.Simkl.Services
             [JsonPropertyName("users")]
             public Dictionary<string, UserImportState> Users { get; set; } = new Dictionary<string, UserImportState>(StringComparer.OrdinalIgnoreCase);
 
+            public UserImportState? Peek(Guid userId)
+            {
+                return Users.TryGetValue(userId.ToString("N"), out var state) ? state : null;
+            }
+
             public UserImportState For(Guid userId)
             {
                 var key = userId.ToString("N");
@@ -1659,6 +1700,18 @@ namespace Jellyfin.Plugin.Simkl.Services
 
             [JsonPropertyName("watchedAt")]
             public DateTime? WatchedAt { get; set; }
+
+            public string Key()
+            {
+                var ids = new List<string>();
+                foreach (var pair in Ids)
+                {
+                    ids.Add(pair.Key.ToLowerInvariant() + "=" + pair.Value);
+                }
+
+                ids.Sort(StringComparer.Ordinal);
+                return Type + "|" + string.Join(",", ids) + "|" + Season + "|" + Episode;
+            }
         }
 
         private sealed class ImportRun
