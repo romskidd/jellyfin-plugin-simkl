@@ -200,7 +200,7 @@
         <span class="simkl-pill" id="simklNotLinkedPill">Not linked</span>
         <p class="simkl-muted" id="simklExpiredNote" hidden>
             <strong>Simkl rejected your saved login, so it was removed.</strong>
-            Nothing has been scrobbled since. Link again to resume — your settings were kept.
+            Live scrobbling is paused until you link again; your settings were kept.<span id="simklPendingNote" hidden></span>
         </p>
         <p class="simkl-muted" id="simklFirstTimeNote">
             You'll get a short code to enter on Simkl. Your Simkl password is never
@@ -440,6 +440,11 @@
                 if (!pick(status, 'Linked')) {
                     var expired = !!pick(status, 'LinkExpired');
                     el('simklExpiredNote').hidden = !expired;
+                    var pending = Number(pick(status, 'PendingWatches')) || 0;
+                    var pendingNote = el('simklPendingNote');
+                    pendingNote.hidden = !(expired && pending > 0);
+                    pendingNote.textContent = ' ' + pending + (pending === 1 ? ' finished watch is' : ' finished watches are')
+                        + ' waiting and will be sent to Simkl once you link again.';
                     el('simklFirstTimeNote').hidden = expired;
                     el('simklNotLinkedPill').textContent = expired ? 'Link expired' : 'Not linked';
                     show('simklNotLinked');

@@ -243,7 +243,13 @@ namespace Jellyfin.Plugin.Simkl.Services
             // ineligible session was never recorded.
             var userConfig = SimklPlugin.Instance?.Configuration.GetByGuid(session.UserId);
             string? skipReason = null;
-            if (userConfig == null || string.IsNullOrEmpty(userConfig.UserToken))
+            // A profile whose link expired has no token, but its finished
+            // watches are kept and replayed once it links again, so its
+            // sessions are followed like any other.
+            var awaitingRelink = userConfig != null
+                                 && string.IsNullOrEmpty(userConfig.UserToken)
+                                 && userConfig.LinkExpired;
+            if (userConfig == null || (string.IsNullOrEmpty(userConfig.UserToken) && !awaitingRelink))
             {
                 skipReason = "user " + session.UserName + " not logged in to Simkl";
             }
@@ -298,7 +304,10 @@ namespace Jellyfin.Plugin.Simkl.Services
 
             var userId = session.UserId;
             var userConfig = SimklPlugin.Instance?.Configuration.GetByGuid(userId);
-            if (userConfig == null || string.IsNullOrEmpty(userConfig.UserToken))
+            var awaitingRelink = userConfig != null
+                                 && string.IsNullOrEmpty(userConfig.UserToken)
+                                 && userConfig.LinkExpired;
+            if (userConfig == null || (string.IsNullOrEmpty(userConfig.UserToken) && !awaitingRelink))
             {
                 _logger.LogDebug("Can't scrobble: user {UserName} not logged in", session.UserName);
                 return false;
@@ -316,6 +325,30 @@ namespace Jellyfin.Plugin.Simkl.Services
 
             if (_libraryFilter.IsExcluded(userConfig, mediaInfo.Path))
             {
+                return false;
+            }
+
+            if (awaitingRelink)
+            {
+                // Nothing can be sent without a token, but a finished watch is
+                // worth keeping: it is replayed with its real date once the
+                // user links Simkl again. Live events are simply dropped.
+                if (action == SimklScrobbleAction.Stop && progress >= RetryThreshold)
+                {
+                    QueueForRetry(action, mediaInfo, progress, userId, ResolveSeriesProviderIds(mediaInfo));
+                    userConfig.LastScrobble = string.Format(
+                        CultureInfo.InvariantCulture,
+                        "WAITING: {0} ({1:0.#}%) at {2:yyyy-MM-dd HH:mm} UTC, sent once Simkl is linked again",
+                        DisplayName(mediaInfo),
+                        progress,
+                        DateTime.UtcNow);
+                    SimklPlugin.Instance?.SaveConfiguration();
+                    _logger.LogInformation(
+                        "Kept {Name} for {UserName}: it reaches Simkl once they link their account again",
+                        mediaInfo.Name,
+                        session.UserName);
+                }
+
                 return false;
             }
 

@@ -30,6 +30,7 @@ namespace Jellyfin.Plugin.Simkl.API
         private readonly SimklApi _simklApi;
         private readonly IAuthorizationContext _authContext;
         private readonly LibraryFilter _libraryFilter;
+        private readonly ScrobbleRetryQueue _retryQueue;
         private readonly ILogger<SelfServiceEndpoints> _logger;
 
         /// <summary>
@@ -38,16 +39,19 @@ namespace Jellyfin.Plugin.Simkl.API
         /// <param name="simklApi">Instance of the <see cref="SimklApi"/>.</param>
         /// <param name="authContext">Instance of the <see cref="IAuthorizationContext"/> interface.</param>
         /// <param name="libraryFilter">Instance of the <see cref="LibraryFilter"/>.</param>
+        /// <param name="retryQueue">Instance of the <see cref="ScrobbleRetryQueue"/>.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{SelfServiceEndpoints}"/> interface.</param>
         public SelfServiceEndpoints(
             SimklApi simklApi,
             IAuthorizationContext authContext,
             LibraryFilter libraryFilter,
+            ScrobbleRetryQueue retryQueue,
             ILogger<SelfServiceEndpoints> logger)
         {
             _simklApi = simklApi;
             _authContext = authContext;
             _libraryFilter = libraryFilter;
+            _retryQueue = retryQueue;
             _logger = logger;
         }
 
@@ -140,6 +144,7 @@ namespace Jellyfin.Plugin.Simkl.API
             {
                 Linked = linked,
                 LinkExpired = config?.LinkExpired ?? false,
+                PendingWatches = _retryQueue.CountFor(userId.Value),
                 SimklName = simklName,
                 SimklPlan = simklPlan,
                 LastScrobble = config?.LastScrobble,

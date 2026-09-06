@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Simkl.API.Objects;
 using Jellyfin.Plugin.Simkl.API.Responses;
+using Jellyfin.Plugin.Simkl.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,14 +17,30 @@ namespace Jellyfin.Plugin.Simkl.API
     public class Endpoints : ControllerBase
     {
         private readonly SimklApi _simklApi;
+        private readonly ScrobbleRetryQueue _retryQueue;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Endpoints"/> class.
         /// </summary>
         /// <param name="simklApi">Instance of the <see cref="SimklApi"/>.</param>
-        public Endpoints(SimklApi simklApi)
+        /// <param name="retryQueue">Instance of the <see cref="ScrobbleRetryQueue"/>.</param>
+        public Endpoints(SimklApi simklApi, ScrobbleRetryQueue retryQueue)
         {
             _simklApi = simklApi;
+            _retryQueue = retryQueue;
+        }
+
+        /// <summary>
+        /// Counts the finished watches waiting to reach Simkl for a user,
+        /// typically while their Simkl link is expired.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The number of waiting watches.</returns>
+        [HttpGet("users/pending/{userId}")]
+        [Authorize(Policy = "RequiresElevation")]
+        public ActionResult GetPendingCount([FromRoute] Guid userId)
+        {
+            return Ok(new { Count = _retryQueue.CountFor(userId) });
         }
 
         /// <summary>

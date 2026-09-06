@@ -32,6 +32,12 @@ namespace Jellyfin.Plugin.Simkl.Services
         private static readonly TimeSpan _retryInterval = TimeSpan.FromMinutes(5);
         private static readonly TimeSpan _giveUpAfter = TimeSpan.FromHours(24);
 
+        /// <summary>
+        /// How long a watch is kept for a profile whose Simkl link expired,
+        /// waiting for the user to link again.
+        /// </summary>
+        private static readonly TimeSpan _relinkGiveUp = TimeSpan.FromDays(30);
+
         private readonly SimklApi _simklApi;
         private readonly IApplicationPaths _applicationPaths;
         private readonly ILogger<ScrobbleRetryQueue> _logger;
@@ -71,6 +77,28 @@ namespace Jellyfin.Plugin.Simkl.Services
             _timer.Dispose();
             Save();
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Counts the watches waiting for a user.
+        /// </summary>
+        /// <param name="userId">The Jellyfin user.</param>
+        /// <returns>How many finished watches are waiting to reach Simkl.</returns>
+        public int CountFor(Guid userId)
+        {
+            lock (_lock)
+            {
+                var count = 0;
+                foreach (var entry in _pending)
+                {
+                    if (entry.UserId == userId)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
         }
 
         /// <summary>
@@ -128,17 +156,31 @@ namespace Jellyfin.Plugin.Simkl.Services
             var done = new List<PendingScrobble>();
             foreach (var entry in snapshot)
             {
-                if (DateTime.UtcNow - entry.FirstFailedUtc > _giveUpAfter)
+                var userConfig = SimklPlugin.Instance?.Configuration.GetByGuid(entry.UserId);
+                var awaitingRelink = userConfig != null
+                                     && string.IsNullOrEmpty(userConfig.UserToken)
+                                     && userConfig.LinkExpired;
+
+                var giveUp = awaitingRelink ? _relinkGiveUp : _giveUpAfter;
+                if (DateTime.UtcNow - entry.FirstFailedUtc > giveUp)
                 {
-                    _logger.LogWarning("Giving up on {Name}: still not accepted after 24 h", entry.Name);
+                    _logger.LogWarning(
+                        "Giving up on {Name}: still not sent after {Hours:0} h",
+                        entry.Name,
+                        giveUp.TotalHours);
                     done.Add(entry);
                     continue;
                 }
 
-                var userConfig = SimklPlugin.Instance?.Configuration.GetByGuid(entry.UserId);
                 if (userConfig == null || string.IsNullOrEmpty(userConfig.UserToken))
                 {
-                    // Not linked any more: nothing we can do with this one.
+                    if (awaitingRelink)
+                    {
+                        // Kept until the user links Simkl again.
+                        continue;
+                    }
+
+                    // Unlinked on purpose: nothing we can do with this one.
                     done.Add(entry);
                     continue;
                 }
