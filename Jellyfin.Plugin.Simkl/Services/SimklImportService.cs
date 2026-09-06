@@ -460,7 +460,7 @@ namespace Jellyfin.Plugin.Simkl.Services
                         return report;
                     }
 
-                    PlanShows(user, body, plan);
+                    PlanShows(user, config, body, plan);
                 }
 
                 if (readMovies)
@@ -472,7 +472,7 @@ namespace Jellyfin.Plugin.Simkl.Services
                         return report;
                     }
 
-                    PlanMovies(user, body, plan);
+                    PlanMovies(user, config, body, plan);
                 }
 
                 // Unwatch only makes sense against the full list: a delta can't
@@ -594,7 +594,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             }
         }
 
-        private void PlanShows(JellyfinUser user, string body, ImportPlan plan)
+        private void PlanShows(JellyfinUser user, UserConfig config, string body, ImportPlan plan)
         {
             using var document = JsonDocument.Parse(body);
             if (!document.RootElement.TryGetProperty("shows", out var shows) || shows.ValueKind != JsonValueKind.Array)
@@ -655,6 +655,12 @@ namespace Jellyfin.Plugin.Simkl.Services
                         }
 
                         plan.Present.Add(item.Id);
+                        if (_libraryFilter.IsExcluded(config, item.Path))
+                        {
+                            plan.Excluded++;
+                            continue;
+                        }
+
                         if (_userDataManager.GetUserData(user, item)?.Played == true)
                         {
                             plan.AlreadyPlayed++;
@@ -674,7 +680,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             }
         }
 
-        private void PlanMovies(JellyfinUser user, string body, ImportPlan plan)
+        private void PlanMovies(JellyfinUser user, UserConfig config, string body, ImportPlan plan)
         {
             using var document = JsonDocument.Parse(body);
             if (!document.RootElement.TryGetProperty("movies", out var movies) || movies.ValueKind != JsonValueKind.Array)
@@ -707,6 +713,12 @@ namespace Jellyfin.Plugin.Simkl.Services
                 }
 
                 plan.Present.Add(item.Id);
+                if (_libraryFilter.IsExcluded(config, item.Path))
+                {
+                    plan.Excluded++;
+                    continue;
+                }
+
                 if (_userDataManager.GetUserData(user, item)?.Played == true)
                 {
                     plan.AlreadyPlayed++;
@@ -1378,6 +1390,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             }
 
             report.AlreadyPlayed = plan.AlreadyPlayed;
+            report.Excluded = plan.Excluded;
             report.UnmatchedEpisodes = plan.UnmatchedEpisodes;
             report.UnmatchedMovies = plan.UnmatchedMovies;
             report.UnmatchedShows = plan.UnmatchedShowTitles.Count;
@@ -1537,6 +1550,8 @@ namespace Jellyfin.Plugin.Simkl.Services
             public int UnmatchedMovies { get; set; }
 
             public int AlreadyPlayed { get; set; }
+
+            public int Excluded { get; set; }
         }
 
         /// <summary>

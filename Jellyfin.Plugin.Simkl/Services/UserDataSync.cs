@@ -104,7 +104,7 @@ namespace Jellyfin.Plugin.Simkl.Services
                 var userConfig = SimklPlugin.Instance?.Configuration.GetByGuid(e.UserId);
                 if (userConfig == null
                     || string.IsNullOrEmpty(userConfig.UserToken)
-                    || !userConfig.SyncMarkPlayed)
+                    || !(userConfig.SyncMarkPlayed || userConfig.ImportFromSimkl))
                 {
                     return;
                 }
@@ -120,7 +120,9 @@ namespace Jellyfin.Plugin.Simkl.Services
                 }
 
                 var played = e.UserData.Played;
-                if (!played && !userConfig.SyncMarkUnplayed)
+                // With the continuous sync (step 3) on, unmarks must reach Simkl
+                // too, or the next pass would mark the item played again here.
+                if (!played && !(userConfig.SyncMarkUnplayed || userConfig.ImportFromSimkl))
                 {
                     return;
                 }

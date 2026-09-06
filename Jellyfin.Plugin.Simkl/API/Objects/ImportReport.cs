@@ -69,6 +69,11 @@ namespace Jellyfin.Plugin.Simkl.API.Objects
         public int UnmatchedMovies { get; set; }
 
         /// <summary>
+        /// Gets or sets the number of Simkl items skipped because they sit in a library the user excluded.
+        /// </summary>
+        public int Excluded { get; set; }
+
+        /// <summary>
         /// Gets or sets when the pass was applied, when it was.
         /// </summary>
         public DateTime? RunUtc { get; set; }
