@@ -235,6 +235,16 @@
                 #SimklConfigurationPage .simklSyncOn { animation: simklPop 0.6s ease-out; }
                 @keyframes simklPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); } 50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); } }
                 @keyframes simklPop { 0% { transform: scale(0.94); opacity: 0.3; } 100% { transform: scale(1); opacity: 1; } }
+                #SimklConfigurationPage .simklTabs { display: flex; gap: 1.2rem; align-items: flex-start; }
+                #SimklConfigurationPage .simklTabList { flex: 0 0 11rem; display: flex; flex-direction: column; gap: 0.3rem; position: sticky; top: 1rem; }
+                #SimklConfigurationPage .simklTab { text-align: left; padding: 0.6rem 0.9rem; border-radius: 0.5rem; background: transparent; color: inherit; border: 1px solid transparent; cursor: pointer; font: inherit; }
+                #SimklConfigurationPage .simklTab:hover { background: rgba(255,255,255,0.06); }
+                #SimklConfigurationPage .simklTab.is-active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); font-weight: 600; }
+                #SimklConfigurationPage .simklTabPanels { flex: 1; min-width: 0; }
+                @media (max-width: 760px) {
+                    #SimklConfigurationPage .simklTabs { flex-direction: column; }
+                    #SimklConfigurationPage .simklTabList { flex-direction: row; flex-wrap: wrap; position: static; }
+                }
             </style>
 
             <div class="simklHeader">
@@ -297,6 +307,14 @@
                 </div>
 
                 <div id="configOptionsContainer" hidden>
+                    <div class="simklTabs">
+                        <div class="simklTabList" role="tablist">
+                            <button type="button" class="simklTab is-active" data-tab="account" onclick="SimklConfig.showTab('account');">Account</button>
+                            <button type="button" class="simklTab" data-tab="scrobbling" onclick="SimklConfig.showTab('scrobbling');">Scrobbling</button>
+                            <button type="button" class="simklTab" data-tab="sync" onclick="SimklConfig.showTab('sync');">Simkl sync</button>
+                        </div>
+                        <div class="simklTabPanels">
+                            <div class="simklTabPanel" data-panel="account">
                     <div class="simklCard">
                         <div class="simklAccountRow">
                             <div class="simklGrow">
@@ -308,7 +326,8 @@
                         </div>
                         <div id="accountStats" class="simklStats"></div>
                     </div>
-
+                            </div>
+                            <div class="simklTabPanel" data-panel="scrobbling" style="display:none;">
                     <div class="simklCard">
                         <div class="simklCardTitle">Scrobbling</div>
                         <div class="simklOption">
@@ -337,6 +356,49 @@
                     </div>
 
                     <div class="simklCard">
+                        <div class="simklCardTitle">Filters</div>
+                        <div class="inputContainer">
+                            <input is="emby-input" id="MinLength" type="number" min="0" pattern="[0-9]*"
+                                   label="Minimum runtime (minutes):"/>
+                            <div class="fieldDescription">
+                                Items shorter than this are never scrobbled.
+                            </div>
+                        </div>
+                        <div style="margin-top:1.2em;">
+                            <div>Never scrobble from these libraries</div>
+                            <div class="fieldDescription">
+                                Useful for home videos or anything you'd rather keep off Simkl.
+                            </div>
+                            <div id="excludedLibraries" class="simklLibs"></div>
+                        </div>
+                    </div>
+
+                    <div class="simklCard">
+                        <div class="simklCardTitle">Manual check marks</div>
+                        <div class="simklOption">
+                            <div class="checkboxcontainer"><label>
+                                <input is="emby-checkbox" type="checkbox" id="SyncMarkPlayed"/>
+                                <span>Sync manual "mark played" to Simkl</span>
+                            </label></div>
+                            <div class="fieldDescription">
+                                When you tick an episode, season or movie as played in Jellyfin,
+                                it is added to your Simkl history (bulk actions are batched into
+                                a single request).
+                            </div>
+                        </div>
+                        <div class="simklOption">
+                            <div class="checkboxcontainer"><label>
+                                <input is="emby-checkbox" type="checkbox" id="SyncMarkUnplayed"/>
+                                <span>Also remove from Simkl when unmarking</span>
+                            </label></div>
+                            <div class="fieldDescription">
+                                When you untick an item, it is removed from your Simkl history.
+                                Off by default to avoid accidental deletions.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="simklCard">
                         <div class="simklCardTitle">Rewatches</div>
                         <div class="simklOption">
                             <div class="checkboxcontainer"><label>
@@ -351,7 +413,8 @@
                             </div>
                         </div>
                     </div>
-
+                            </div>
+                            <div class="simklTabPanel" data-panel="sync" style="display:none;">
                     <div class="simklCard" id="simklSyncCard">
                         <div class="simklCardTitle">Simkl sync <span class="simklMuted" style="font-weight:normal;">(experimental)</span></div>
                         <details class="simklTutorial">
@@ -412,47 +475,7 @@
                         </div>
                         <pre class="simklMuted" id="importResult" style="display:none;white-space:pre-wrap;max-height:16rem;overflow:auto;margin-top:0.6rem;font-family:inherit;"></pre>
                     </div>
-
-                    <div class="simklCard">
-                        <div class="simklCardTitle">Manual check marks</div>
-                        <div class="simklOption">
-                            <div class="checkboxcontainer"><label>
-                                <input is="emby-checkbox" type="checkbox" id="SyncMarkPlayed"/>
-                                <span>Sync manual "mark played" to Simkl</span>
-                            </label></div>
-                            <div class="fieldDescription">
-                                When you tick an episode, season or movie as played in Jellyfin,
-                                it is added to your Simkl history (bulk actions are batched into
-                                a single request).
                             </div>
-                        </div>
-                        <div class="simklOption">
-                            <div class="checkboxcontainer"><label>
-                                <input is="emby-checkbox" type="checkbox" id="SyncMarkUnplayed"/>
-                                <span>Also remove from Simkl when unmarking</span>
-                            </label></div>
-                            <div class="fieldDescription">
-                                When you untick an item, it is removed from your Simkl history.
-                                Off by default to avoid accidental deletions.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="simklCard">
-                        <div class="simklCardTitle">Filters</div>
-                        <div class="inputContainer">
-                            <input is="emby-input" id="MinLength" type="number" min="0" pattern="[0-9]*"
-                                   label="Minimum runtime (minutes):"/>
-                            <div class="fieldDescription">
-                                Items shorter than this are never scrobbled.
-                            </div>
-                        </div>
-                        <div style="margin-top:1.2em;">
-                            <div>Never scrobble from these libraries</div>
-                            <div class="fieldDescription">
-                                Useful for home videos or anything you'd rather keep off Simkl.
-                            </div>
-                            <div id="excludedLibraries" class="simklLibs"></div>
                         </div>
                     </div>
 
@@ -552,6 +575,21 @@
                 } else {
                     Dashboard.alert('Copy the selected link with Ctrl+C');
                 }
+            },
+            showTab: function (name) {
+                document.querySelectorAll('#SimklConfigurationPage .simklTab').forEach(function (tab) {
+                    tab.classList.toggle('is-active', tab.getAttribute('data-tab') === name);
+                });
+                document.querySelectorAll('#SimklConfigurationPage .simklTabPanel').forEach(function (panel) {
+                    panel.style.display = panel.getAttribute('data-panel') === name ? '' : 'none';
+                });
+                try { window.localStorage.setItem('simklConfigTab', name); } catch (e) { /* private mode */ }
+            },
+            restoreTab: function () {
+                let name = 'account';
+                try { name = window.localStorage.getItem('simklConfigTab') || 'account'; } catch (e) { /* private mode */ }
+                if (!document.querySelector('#SimklConfigurationPage .simklTab[data-tab="' + name + '"]')) { name = 'account'; }
+                SimklConfig.showTab(name);
             },
             renderImportStatus: function (userId) {
                 const g = function (o, k) { return o ? (o[k] !== undefined ? o[k] : o[k.charAt(0).toLowerCase() + k.slice(1)]) : undefined; };
@@ -701,6 +739,7 @@
 
                 if (config.UserConfigs.some(e => e.Id === user && e.UserToken != null && e.UserToken !== "")) {
                     SimklConfig.configOptionsContainer.removeAttribute('hidden');
+                    SimklConfig.restoreTab();
                     await this.populateOptionsContainer(config.UserConfigs.filter(e => e.Id === user)[0]);
                 } else {
                     // Distinguish "never linked" from "Simkl rejected the token",

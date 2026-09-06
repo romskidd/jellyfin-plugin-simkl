@@ -188,6 +188,16 @@
         #simklSelfService .simkl-syncon { animation: simklPop 0.6s ease-out; }
         @keyframes simklPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); } 50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); } }
         @keyframes simklPop { 0% { transform: scale(0.94); opacity: 0.3; } 100% { transform: scale(1); opacity: 1; } }
+        #simklSelfService .simkl-tabs { display: flex; gap: 1.2rem; align-items: flex-start; }
+        #simklSelfService .simkl-tablist { flex: 0 0 10rem; display: flex; flex-direction: column; gap: 0.3rem; position: sticky; top: 1rem; }
+        #simklSelfService .simkl-tab { text-align: left; padding: 0.6rem 0.9rem; border-radius: 0.5rem; background: transparent; color: inherit; border: 1px solid transparent; cursor: pointer; font: inherit; }
+        #simklSelfService .simkl-tab:hover { background: rgba(255,255,255,0.06); }
+        #simklSelfService .simkl-tab.is-active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); font-weight: 600; }
+        #simklSelfService .simkl-tabpanels { flex: 1; min-width: 0; }
+        @media (max-width: 760px) {
+            #simklSelfService .simkl-tabs { flex-direction: column; }
+            #simklSelfService .simkl-tablist { flex-direction: row; flex-wrap: wrap; position: static; }
+        }
     </style>
 
     <div class="simkl-head">
@@ -236,6 +246,14 @@
     </div>
 
     <div id="simklLinked" hidden>
+        <div class="simkl-tabs">
+            <div class="simkl-tablist" role="tablist">
+                <button type="button" class="simkl-tab is-active" data-tab="account">Account</button>
+                <button type="button" class="simkl-tab" data-tab="options">Options</button>
+                <button type="button" class="simkl-tab" data-tab="sync">Simkl sync</button>
+            </div>
+            <div class="simkl-tabpanels">
+                <div class="simkl-tabpanel" data-panel="account">
         <div class="simkl-card">
             <div class="simkl-row">
                 <div class="simkl-grow">
@@ -245,7 +263,8 @@
                 <button class="simkl-btn" id="simklUnlink" type="button">Unlink</button>
             </div>
         </div>
-
+                </div>
+                <div class="simkl-tabpanel" data-panel="options" style="display:none;">
         <div class="simkl-card">
             <div class="simkl-opt">
                 <label>
@@ -273,6 +292,39 @@
                     instead of doing nothing. Requires Simkl Pro or VIP.
                 </div>
             </div>
+            <div class="simkl-opt">
+                <label>
+                    <input type="checkbox" id="simklSyncMarkPlayed"/>
+                    <span>Sync manual "mark played" to Simkl</span>
+                </label>
+                <div class="simkl-hint">Ticking an episode or movie as played adds it to your Simkl history.</div>
+            </div>
+            <div class="simkl-opt">
+                <label>
+                    <input type="checkbox" id="simklSyncMarkUnplayed"/>
+                    <span>Also remove from Simkl when unmarking</span>
+                </label>
+                <div class="simkl-hint">Off by default, to avoid accidental deletions.</div>
+            </div>
+            <div class="simkl-opt">
+                <div>Never scrobble from these libraries</div>
+                <div class="simkl-hint" style="margin-left:0;">
+                    Useful for home videos or anything you'd rather keep off Simkl.
+                </div>
+                <div id="simklLibraries" class="simkl-libs"></div>
+            </div>
+            <div class="simkl-opt simkl-row">
+                <label for="simklMinLength" class="simkl-grow">Minimum runtime (minutes)</label>
+                <input type="number" id="simklMinLength" min="0" max="600"/>
+            </div>
+            <div class="simkl-actions">
+                <button class="simkl-btn primary" id="simklSave" type="button">Save</button>
+            </div>
+            <div class="simkl-toast" id="simklSaved" hidden>Saved.</div>
+        </div>
+                </div>
+                <div class="simkl-tabpanel" data-panel="sync" style="display:none;">
+        <div class="simkl-card">
             <div class="simkl-opt" id="simklSyncCard">
                 <div><strong>Simkl sync</strong> <em class="simkl-muted">(experimental)</em></div>
                 <details class="simkl-tutorial">
@@ -333,35 +385,13 @@
                 </div>
                 <pre class="simkl-muted" id="simklImportResult" style="display:none;white-space:pre-wrap;max-height:16rem;overflow:auto;font-family:inherit;"></pre>
             </div>
-            <div class="simkl-opt">
-                <label>
-                    <input type="checkbox" id="simklSyncMarkPlayed"/>
-                    <span>Sync manual "mark played" to Simkl</span>
-                </label>
-                <div class="simkl-hint">Ticking an episode or movie as played adds it to your Simkl history.</div>
-            </div>
-            <div class="simkl-opt">
-                <label>
-                    <input type="checkbox" id="simklSyncMarkUnplayed"/>
-                    <span>Also remove from Simkl when unmarking</span>
-                </label>
-                <div class="simkl-hint">Off by default, to avoid accidental deletions.</div>
-            </div>
-            <div class="simkl-opt">
-                <div>Never scrobble from these libraries</div>
-                <div class="simkl-hint" style="margin-left:0;">
-                    Useful for home videos or anything you'd rather keep off Simkl.
-                </div>
-                <div id="simklLibraries" class="simkl-libs"></div>
-            </div>
-            <div class="simkl-opt simkl-row">
-                <label for="simklMinLength" class="simkl-grow">Minimum runtime (minutes)</label>
-                <input type="number" id="simklMinLength" min="0" max="600"/>
-            </div>
             <div class="simkl-actions">
-                <button class="simkl-btn primary" id="simklSave" type="button">Save</button>
+                <button class="simkl-btn primary" id="simklSave2" type="button">Save</button>
             </div>
-            <div class="simkl-toast" id="simklSaved" hidden>Saved.</div>
+            <div class="simkl-toast" id="simklSaved2" hidden>Saved.</div>
+        </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -755,6 +785,22 @@
                 });
             });
 
+            function showTab(name) {
+                Array.prototype.forEach.call(root.querySelectorAll('.simkl-tab'), function (tab) {
+                    tab.classList.toggle('is-active', tab.getAttribute('data-tab') === name);
+                });
+                Array.prototype.forEach.call(root.querySelectorAll('.simkl-tabpanel'), function (panel) {
+                    panel.style.display = panel.getAttribute('data-panel') === name ? '' : 'none';
+                });
+                try { window.localStorage.setItem('simklSelfServiceTab', name); } catch (e) { /* private mode */ }
+            }
+            Array.prototype.forEach.call(root.querySelectorAll('.simkl-tab'), function (tab) {
+                tab.addEventListener('click', function () { showTab(tab.getAttribute('data-tab')); });
+            });
+            try { showTab(window.localStorage.getItem('simklSelfServiceTab') || 'account'); } catch (e) { showTab('account'); }
+
+            el('simklSave2').addEventListener('click', function () { el('simklSave').click(); });
+
             el('simklSave').addEventListener('click', function () {
                 var body = {
                     MinLength: parseInt(el('simklMinLength').value, 10) || 0,
@@ -767,9 +813,12 @@
                 });
 
                 var saved = el('simklSaved');
+                var saved2 = el('simklSaved2');
                 api('/Simkl/Me/Options', { method: 'POST', body: JSON.stringify(body) }).then(function () {
                     saved.hidden = false;
-                    window.setTimeout(function () { saved.hidden = true; }, 2500);
+                    saved2.hidden = false;
+                    window.setTimeout(function () { saved.hidden = true; saved2.hidden = true; }, 2500);
+                    renderImportStatus();
                 }).catch(function (err) {
                     console.error(err);
                 });
