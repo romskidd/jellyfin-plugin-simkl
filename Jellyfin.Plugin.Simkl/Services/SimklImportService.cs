@@ -47,6 +47,8 @@ namespace Jellyfin.Plugin.Simkl.Services
         private const int MaxUnmatched = 2000;
         private const int MaxReportLines = 200;
         private const string RefreshLibraryTaskKey = "RefreshLibrary";
+        private const int ExportShowsPerRequest = 25;
+        private const int ExportMoviesPerRequest = 100;
 
         private static readonly TimeSpan _minInterval = TimeSpan.FromHours(1);
         private static readonly TimeSpan _journalRetention = TimeSpan.FromDays(7);
@@ -62,6 +64,7 @@ namespace Jellyfin.Plugin.Simkl.Services
         private readonly ITaskManager _taskManager;
         private readonly ISessionManager _sessionManager;
         private readonly IApplicationPaths _applicationPaths;
+        private readonly LibraryFilter _libraryFilter;
         private readonly ILogger<SimklImportService> _logger;
         private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _userLocks = new ConcurrentDictionary<Guid, SemaphoreSlim>();
         private readonly object _stateLock = new object();
@@ -78,6 +81,7 @@ namespace Jellyfin.Plugin.Simkl.Services
         /// <param name="taskManager">Instance of the <see cref="ITaskManager"/> interface.</param>
         /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
         /// <param name="applicationPaths">Instance of the <see cref="IApplicationPaths"/> interface.</param>
+        /// <param name="libraryFilter">Instance of the <see cref="LibraryFilter"/>.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{SimklImportService}"/> interface.</param>
         public SimklImportService(
             SimklApi simklApi,
@@ -87,6 +91,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             ITaskManager taskManager,
             ISessionManager sessionManager,
             IApplicationPaths applicationPaths,
+            LibraryFilter libraryFilter,
             ILogger<SimklImportService> logger)
         {
             _simklApi = simklApi;
@@ -96,6 +101,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             _taskManager = taskManager;
             _sessionManager = sessionManager;
             _applicationPaths = applicationPaths;
+            _libraryFilter = libraryFilter;
             _logger = logger;
         }
 
@@ -271,6 +277,9 @@ namespace Jellyfin.Plugin.Simkl.Services
                 InitialDone = config?.ImportInitialDone ?? false,
                 LastCheckUtc = config?.ImportLastCheckUtc,
                 LastReport = config?.ImportLastReport,
+                ExportDone = config?.ExportInitialDone ?? false,
+                ExportLastReport = config?.ExportLastReport,
+                SyncActive = config != null && config.ImportFromSimkl && config.ImportInitialDone && config.ExportInitialDone,
             };
 
             lock (_stateLock)
@@ -279,6 +288,14 @@ namespace Jellyfin.Plugin.Simkl.Services
                 status.PendingConfirmation = state.PendingConfirmation;
                 status.UnmatchedCount = state.Unmatched.Count;
                 status.ImportedCount = state.Imported.Count;
+                status.ExportedCount = state.Exported.Count;
+                if (state.ExportRuns.Count > 0)
+                {
+                    var lastExport = state.ExportRuns[state.ExportRuns.Count - 1];
+                    status.CanUndoExport = true;
+                    status.ExportUndoCount = lastExport.Items.Count;
+                }
+
                 if (state.Runs.Count > 0)
                 {
                     var last = state.Runs[state.Runs.Count - 1];
@@ -355,15 +372,15 @@ namespace Jellyfin.Plugin.Simkl.Services
                 return report;
             }
 
-            if (mode != ImportMode.Preview && !config.ImportFromSimkl)
+            if (mode == ImportMode.Delta && !config.ImportInitialDone)
             {
-                report.Message = "Import from Simkl is not enabled for this profile.";
+                report.Message = "Run step 1 (Simkl to Jellyfin) first.";
                 return report;
             }
 
-            if (mode == ImportMode.Delta && !config.ImportInitialDone)
+            if (mode == ImportMode.Delta && !manual && (!config.ImportFromSimkl || !config.ExportInitialDone))
             {
-                report.Message = "Run the initial import first.";
+                report.Message = "Continuous sync is not active for this profile.";
                 return report;
             }
 
@@ -892,6 +909,403 @@ namespace Jellyfin.Plugin.Simkl.Services
             }
         }
 
+        /// <summary>
+        /// Lists what an export of Jellyfin's played history to Simkl would send, without sending.
+        /// </summary>
+        /// <param name="userId">The Jellyfin user.</param>
+        /// <returns>The report.</returns>
+        public Task<ImportReport> ExportPreviewAsync(Guid userId)
+        {
+            return ExportAsync(userId, apply: false);
+        }
+
+        /// <summary>
+        /// Sends Jellyfin's played history to the user's Simkl history (step 2 of the sync setup).
+        /// </summary>
+        /// <param name="userId">The Jellyfin user.</param>
+        /// <returns>The report.</returns>
+        public Task<ImportReport> ExportApplyAsync(Guid userId)
+        {
+            return ExportAsync(userId, apply: true);
+        }
+
+        /// <summary>
+        /// Removes from Simkl what the last export sent.
+        /// </summary>
+        /// <param name="userId">The Jellyfin user.</param>
+        /// <returns>The report.</returns>
+        public async Task<ImportReport> ExportUndoAsync(Guid userId)
+        {
+            var report = new ImportReport { Mode = "export-undo" };
+            var config = SimklPlugin.Instance?.Configuration.GetByGuid(userId);
+            var user = _userManager.GetUserById(userId);
+            if (config == null || string.IsNullOrEmpty(config.UserToken) || user == null)
+            {
+                report.Message = "This profile is not linked to Simkl.";
+                return report;
+            }
+
+            ExportRun? run;
+            lock (_stateLock)
+            {
+                var state = LoadState().For(userId);
+                run = state.ExportRuns.Count > 0 ? state.ExportRuns[state.ExportRuns.Count - 1] : null;
+            }
+
+            if (run == null)
+            {
+                report.Message = "Nothing to undo.";
+                return report;
+            }
+
+            var items = new List<BaseItem>();
+            foreach (var itemId in run.Items)
+            {
+                var item = _libraryManager.GetItemById(itemId);
+                if (item != null)
+                {
+                    items.Add(item);
+                }
+            }
+
+            var plan = BuildExportPlan(user, config, items, skipImported: false);
+            var removed = 0;
+            foreach (var history in plan.Batches)
+            {
+                var response = await _simklApi.RemoveFromHistory(history, config.UserToken).ConfigureAwait(false);
+                if (response == null)
+                {
+                    report.Message = "Simkl did not accept the removal; nothing was changed locally. Try again later.";
+                    return report;
+                }
+
+                removed += CountItems(history);
+            }
+
+            lock (_stateLock)
+            {
+                var state = LoadState().For(userId);
+                state.ExportRuns.Remove(run);
+                foreach (var itemId in run.Items)
+                {
+                    state.Exported.Remove(itemId);
+                }
+
+                SaveState();
+            }
+
+            report.Applied = true;
+            report.Message = string.Format(CultureInfo.InvariantCulture, "Removed {0} item(s) from your Simkl history (export of {1:yyyy-MM-dd HH:mm} UTC).", removed, run.Utc);
+            config.ExportLastReport = string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd HH:mm} UTC: {1}", DateTime.UtcNow, report.Message);
+            SimklPlugin.Instance?.SaveConfiguration();
+            _logger.LogInformation("Undid the Simkl export of {Utc} for {UserId}: {Count} item(s) removed", run.Utc, userId, removed);
+            return report;
+        }
+
+        private static int CountItems(SimklHistory history)
+        {
+            var count = history.Movies.Count;
+            foreach (var show in history.Shows)
+            {
+                foreach (var season in show.Seasons ?? Array.Empty<Season>())
+                {
+                    count += season.Episodes.Count;
+                }
+            }
+
+            return count;
+        }
+
+        private async Task<ImportReport> ExportAsync(Guid userId, bool apply)
+        {
+            var report = new ImportReport { Mode = apply ? "export" : "export-preview" };
+            var config = SimklPlugin.Instance?.Configuration.GetByGuid(userId);
+            var user = _userManager.GetUserById(userId);
+            if (config == null || string.IsNullOrEmpty(config.UserToken) || user == null)
+            {
+                report.Message = "This profile is not linked to Simkl.";
+                return report;
+            }
+
+            var gate = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+            if (!await gate.WaitAsync(30000).ConfigureAwait(false))
+            {
+                report.Message = "A pass is already running for this profile.";
+                return report;
+            }
+
+            try
+            {
+                var played = new List<BaseItem>();
+                foreach (var kind in new[] { BaseItemKind.Episode, BaseItemKind.Movie })
+                {
+                    var query = new InternalItemsQuery(user)
+                    {
+                        IncludeItemTypes = new[] { kind },
+                        IsPlayed = true,
+                        Recursive = true,
+                        IsVirtualItem = false,
+                    };
+                    played.AddRange(_libraryManager.GetItemList(query));
+                }
+
+                var plan = BuildExportPlan(user, config, played, skipImported: true);
+                report.MarkedEpisodes = plan.Episodes;
+                report.MarkedMovies = plan.Movies;
+                report.TotalChanges = plan.Episodes + plan.Movies;
+                report.UnmatchedEpisodes = plan.NoIdsEpisodes;
+                report.UnmatchedMovies = plan.NoIdsMovies;
+                report.AlreadyPlayed = plan.SkippedImported;
+                foreach (var line in plan.Lines)
+                {
+                    if (report.Lines.Count >= MaxReportLines)
+                    {
+                        break;
+                    }
+
+                    report.Lines.Add("> " + line);
+                }
+
+                if (!apply)
+                {
+                    report.Message = report.TotalChanges == 0
+                        ? "Nothing to send: Jellyfin has no played item that Simkl would need."
+                        : string.Format(CultureInfo.InvariantCulture, "{0} item(s) would be sent to your Simkl history.", report.TotalChanges);
+                    return report;
+                }
+
+                var sent = 0;
+                foreach (var history in plan.Batches)
+                {
+                    var response = await _simklApi.AddToHistory(history, config.UserToken).ConfigureAwait(false);
+                    if (response == null)
+                    {
+                        report.Message = string.Format(CultureInfo.InvariantCulture, "Simkl stopped accepting the history after {0} item(s); the rest was not sent. Try again later.", sent);
+                        break;
+                    }
+
+                    sent += CountItems(history);
+                }
+
+                if (sent > 0)
+                {
+                    lock (_stateLock)
+                    {
+                        var state = LoadState().For(userId);
+                        var run = new ExportRun { Utc = DateTime.UtcNow };
+                        foreach (var itemId in plan.ItemIds)
+                        {
+                            run.Items.Add(itemId);
+                            state.Exported.Add(itemId);
+                        }
+
+                        state.ExportRuns.Add(run);
+                        SaveState();
+                    }
+                }
+
+                if (string.IsNullOrEmpty(report.Message))
+                {
+                    report.Message = string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Sent {0} item(s) to your Simkl history: {1} episode(s) and {2} movie(s); {3} item(s) had no usable ids.",
+                        sent,
+                        plan.Episodes,
+                        plan.Movies,
+                        plan.NoIdsEpisodes + plan.NoIdsMovies);
+                }
+
+                report.Applied = true;
+                config.ExportInitialDone = true;
+                config.ExportLastReport = string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd HH:mm} UTC: {1}", DateTime.UtcNow, report.Message);
+                SimklPlugin.Instance?.SaveConfiguration();
+                _logger.LogInformation("Simkl export for {UserId}: {Message}", userId, report.Message);
+                return report;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Simkl export failed for {UserId}", userId);
+                report.Message = "The export failed: " + ex.Message;
+                return report;
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Groups played items into Simkl history requests, with their real watch
+        /// dates. Items the Simkl-to-Jellyfin import marked are left out (they
+        /// came from Simkl), as are excluded libraries and items without ids.
+        /// </summary>
+        private ExportPlan BuildExportPlan(JellyfinUser user, UserConfig config, IReadOnlyList<BaseItem> items, bool skipImported)
+        {
+            var plan = new ExportPlan();
+            HashSet<Guid> imported;
+            lock (_stateLock)
+            {
+                imported = new HashSet<Guid>(LoadState().For(user.Id).Imported);
+            }
+
+            var shows = new Dictionary<Guid, (BaseItem Series, Dictionary<string, string> Ids, SortedDictionary<int, SortedDictionary<int, DateTime?>> Seasons)>();
+            var movies = new List<SimklMovie>();
+            foreach (var item in items)
+            {
+                if (skipImported && imported.Contains(item.Id))
+                {
+                    plan.SkippedImported++;
+                    continue;
+                }
+
+                if (_libraryFilter.IsExcluded(config, item.Path))
+                {
+                    continue;
+                }
+
+                var watchedAt = _userDataManager.GetUserData(user, item)?.LastPlayedDate;
+                if (item is MediaBrowser.Controller.Entities.Movies.Movie)
+                {
+                    var ids = PickIds(item.ProviderIds, _movieIdKeys);
+                    if (ids.Count == 0)
+                    {
+                        plan.NoIdsMovies++;
+                        continue;
+                    }
+
+                    movies.Add(new SimklMovie
+                    {
+                        Title = item.Name,
+                        Year = item.ProductionYear,
+                        Ids = new SimklMovieIds(ids),
+                        WatchedAt = watchedAt ?? DateTime.UtcNow,
+                    });
+                    plan.ItemIds.Add(item.Id);
+                    plan.Movies++;
+                    plan.Lines.Add(ItemLine(item.Name, null, null, watchedAt));
+                    continue;
+                }
+
+                if (item is not MediaBrowser.Controller.Entities.TV.Episode episode
+                    || episode.ParentIndexNumber is not int season
+                    || episode.IndexNumber is not int number
+                    || season <= 0)
+                {
+                    continue;
+                }
+
+                var seriesId = episode.SeriesId;
+                if (!shows.TryGetValue(seriesId, out var entry))
+                {
+                    var series = _libraryManager.GetItemById(seriesId);
+                    if (series == null)
+                    {
+                        plan.NoIdsEpisodes++;
+                        continue;
+                    }
+
+                    var seriesIds = PickIds(series.ProviderIds, _seriesIdKeys);
+                    entry = (series, seriesIds, new SortedDictionary<int, SortedDictionary<int, DateTime?>>());
+                    shows[seriesId] = entry;
+                }
+
+                if (entry.Ids.Count == 0)
+                {
+                    plan.NoIdsEpisodes++;
+                    continue;
+                }
+
+                if (!entry.Seasons.TryGetValue(season, out var episodes))
+                {
+                    episodes = new SortedDictionary<int, DateTime?>();
+                    entry.Seasons[season] = episodes;
+                }
+
+                episodes[number] = watchedAt;
+                plan.ItemIds.Add(item.Id);
+                plan.Episodes++;
+                plan.Lines.Add(ItemLine(entry.Series.Name, season, number, watchedAt));
+            }
+
+            var current = new SimklHistory();
+            var showsInBatch = 0;
+            foreach (var entry in shows.Values)
+            {
+                if (entry.Ids.Count == 0 || entry.Seasons.Count == 0)
+                {
+                    continue;
+                }
+
+                var seasons = new List<Season>();
+                foreach (var season in entry.Seasons)
+                {
+                    var eps = new List<ShowEpisode>();
+                    foreach (var ep in season.Value)
+                    {
+                        eps.Add(new ShowEpisode { Number = ep.Key, WatchedAt = ep.Value ?? DateTime.UtcNow });
+                    }
+
+                    seasons.Add(new Season { Number = season.Key, Episodes = eps });
+                }
+
+                current.Shows.Add(new SimklShow
+                {
+                    Title = entry.Series.Name,
+                    Year = entry.Series.ProductionYear,
+                    Ids = new SimklShowIds(new Dictionary<string, string>(entry.Ids, StringComparer.OrdinalIgnoreCase)),
+                    Seasons = seasons,
+                });
+
+                if (++showsInBatch >= ExportShowsPerRequest)
+                {
+                    plan.Batches.Add(current);
+                    current = new SimklHistory();
+                    showsInBatch = 0;
+                }
+            }
+
+            foreach (var movie in movies)
+            {
+                current.Movies.Add(movie);
+                if (current.Movies.Count >= ExportMoviesPerRequest)
+                {
+                    plan.Batches.Add(current);
+                    current = new SimklHistory();
+                    showsInBatch = 0;
+                }
+            }
+
+            if (current.Shows.Count > 0 || current.Movies.Count > 0)
+            {
+                plan.Batches.Add(current);
+            }
+
+            return plan;
+        }
+
+        private static Dictionary<string, string> PickIds(Dictionary<string, string>? providerIds, string[] keys)
+        {
+            var ids = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (providerIds == null)
+            {
+                return ids;
+            }
+
+            foreach (var key in keys)
+            {
+                foreach (var pair in providerIds)
+                {
+                    if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(pair.Value))
+                    {
+                        ids[key] = pair.Value;
+                        break;
+                    }
+                }
+            }
+
+            return ids;
+        }
+
         private BaseItem? FindItem(JellyfinUser user, BaseItemKind kind, Dictionary<string, string> ids)
         {
             if (ids.Count == 0)
@@ -988,7 +1402,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             }
 
             var config = SimklPlugin.Instance?.Configuration.GetByGuid(userId.Value);
-            if (config == null || !config.ImportFromSimkl || !config.ImportInitialDone || string.IsNullOrEmpty(config.UserToken))
+            if (config == null || !config.ImportFromSimkl || !config.ImportInitialDone || !config.ExportInitialDone || string.IsNullOrEmpty(config.UserToken))
             {
                 return;
             }
@@ -1024,7 +1438,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             var users = new List<Guid>();
             foreach (var config in configs)
             {
-                if (config.ImportFromSimkl && config.ImportInitialDone && !string.IsNullOrEmpty(config.UserToken))
+                if (config.ImportFromSimkl && config.ImportInitialDone && config.ExportInitialDone && !string.IsNullOrEmpty(config.UserToken))
                 {
                     users.Add(config.Id);
                 }
@@ -1092,6 +1506,7 @@ namespace Jellyfin.Plugin.Simkl.Services
             foreach (var userState in _state.Users.Values)
             {
                 userState.Runs.RemoveAll(r => r.Utc < cutoff);
+                userState.ExportRuns.RemoveAll(r => r.Utc < cutoff);
             }
 
             try
@@ -1122,6 +1537,28 @@ namespace Jellyfin.Plugin.Simkl.Services
             public int UnmatchedMovies { get; set; }
 
             public int AlreadyPlayed { get; set; }
+        }
+
+        /// <summary>
+        /// What an export would send to Simkl.
+        /// </summary>
+        private sealed class ExportPlan
+        {
+            public List<SimklHistory> Batches { get; } = new List<SimklHistory>();
+
+            public List<Guid> ItemIds { get; } = new List<Guid>();
+
+            public List<string> Lines { get; } = new List<string>();
+
+            public int Episodes { get; set; }
+
+            public int Movies { get; set; }
+
+            public int NoIdsEpisodes { get; set; }
+
+            public int NoIdsMovies { get; set; }
+
+            public int SkippedImported { get; set; }
         }
 
         private sealed class PlannedChange
@@ -1171,6 +1608,21 @@ namespace Jellyfin.Plugin.Simkl.Services
 
             [JsonPropertyName("pendingConfirmation")]
             public int PendingConfirmation { get; set; }
+
+            [JsonPropertyName("exported")]
+            public HashSet<Guid> Exported { get; set; } = new HashSet<Guid>();
+
+            [JsonPropertyName("exportRuns")]
+            public List<ExportRun> ExportRuns { get; set; } = new List<ExportRun>();
+        }
+
+        private sealed class ExportRun
+        {
+            [JsonPropertyName("utc")]
+            public DateTime Utc { get; set; }
+
+            [JsonPropertyName("items")]
+            public List<Guid> Items { get; set; } = new List<Guid>();
         }
 
         private sealed class UnmatchedEntry

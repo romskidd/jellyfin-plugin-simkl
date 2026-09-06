@@ -301,6 +301,39 @@ namespace Jellyfin.Plugin.Simkl.API
         }
 
         /// <summary>
+        /// Lists what an export of the played history to Simkl would send.
+        /// </summary>
+        /// <returns>The report.</returns>
+        [HttpPost("Me/Import/ExportPreview")]
+        public async Task<ActionResult<ImportReport>> ExportPreview()
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(await _importService.ExportPreviewAsync(userId.Value).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Sends the played history to Simkl (step 2).
+        /// </summary>
+        /// <returns>The report.</returns>
+        [HttpPost("Me/Import/Export")]
+        public async Task<ActionResult<ImportReport>> Export()
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(await _importService.ExportApplyAsync(userId.Value).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Removes from Simkl what the last export sent.
+        /// </summary>
+        /// <returns>The report.</returns>
+        [HttpPost("Me/Import/ExportUndo")]
+        public async Task<ActionResult<ImportReport>> ExportUndo()
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(await _importService.ExportUndoAsync(userId.Value).ConfigureAwait(false));
+        }
+
+        /// <summary>
         /// Reverts the last import pass.
         /// </summary>
         /// <returns>The report.</returns>

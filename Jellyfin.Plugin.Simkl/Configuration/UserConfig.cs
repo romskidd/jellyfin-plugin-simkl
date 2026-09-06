@@ -170,6 +170,17 @@ namespace Jellyfin.Plugin.Simkl.Configuration
         public string? ImportLastReport { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the confirmed export of
+        /// Jellyfin's played history to Simkl ran (step 2 of the sync setup).
+        /// </summary>
+        public bool ExportInitialDone { get; set; }
+
+        /// <summary>
+        /// Gets or sets the summary of the last export pass.
+        /// </summary>
+        public string? ExportLastReport { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether finishing something already
         /// watched is recorded as a Simkl rewatch session. Simkl only honours
         /// this for Pro and VIP accounts.

@@ -61,5 +61,36 @@ namespace Jellyfin.Plugin.Simkl.API.Objects
         /// Gets or sets how many items the undoable pass changed.
         /// </summary>
         public int UndoCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the export to Simkl (step 2) was done.
+        /// </summary>
+        public bool ExportDone { get; set; }
+
+        /// <summary>
+        /// Gets or sets the last export summary.
+        /// </summary>
+        public string? ExportLastReport { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of items the export has sent to Simkl so far.
+        /// </summary>
+        public int ExportedCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the last export can be undone.
+        /// </summary>
+        public bool CanUndoExport { get; set; }
+
+        /// <summary>
+        /// Gets or sets how many items the undoable export sent.
+        /// </summary>
+        public int ExportUndoCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the continuous sync (step 3) is active:
+        /// enabled, and both initial passes done.
+        /// </summary>
+        public bool SyncActive { get; set; }
     }
 }

@@ -176,6 +176,18 @@
         #simklSelfService .simkl-toast { margin-top: 0.9rem; font-size: 0.88rem; color: var(--simkl-ok); }
 
         #simklSelfService [hidden] { display: none !important; }
+        #simklSelfService .simkl-tutorial { margin: 0.4rem 0 0.6rem; }
+        #simklSelfService .simkl-tutorial summary { cursor: pointer; font-weight: 500; }
+        #simklSelfService .simkl-tutorial ol { margin: 0.5rem 0 0.3rem; padding-left: 1.4rem; }
+        #simklSelfService .simkl-tutorial li { margin-bottom: 0.3rem; }
+        #simklSelfService .simkl-step { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.7rem 0; border-top: 1px solid rgba(255,255,255,0.08); }
+        #simklSelfService .simkl-stepnum { width: 1.7rem; height: 1.7rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; background: rgba(255,255,255,0.12); flex: none; }
+        #simklSelfService .simkl-stepnum.done { background: #22c55e; color: #fff; }
+        #simklSelfService .simkl-syncactive { margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
+        #simklSelfService .simkl-syncdot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; flex: none; animation: simklPulse 2s ease-in-out infinite; }
+        #simklSelfService .simkl-syncon { animation: simklPop 0.6s ease-out; }
+        @keyframes simklPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); } 50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); } }
+        @keyframes simklPop { 0% { transform: scale(0.94); opacity: 0.3; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 
     <div class="simkl-head">
@@ -261,30 +273,65 @@
                     instead of doing nothing. Requires Simkl Pro or VIP.
                 </div>
             </div>
-            <div class="simkl-opt">
-                <label>
-                    <input type="checkbox" id="simklImportFromSimkl"/>
-                    <span>Bring my Simkl watch history into Jellyfin <em>(experimental)</em></span>
-                </label>
-                <div class="simkl-hint">
-                    Episodes and movies you watched on Simkl get marked played here (anime left out for now).
-                    Tick, Save, then Preview, then Apply. Later passes run after a playback or a library scan,
-                    at most once an hour, and stop at 200 changes until you confirm. Every pass can be undone for 7 days.
+            <div class="simkl-opt" id="simklSyncCard">
+                <div><strong>Simkl sync</strong> <em class="simkl-muted">(experimental)</em></div>
+                <details class="simkl-tutorial">
+                    <summary>How it works, in three steps</summary>
+                    <ol>
+                <li><strong>Simkl to Jellyfin.</strong> Everything you watched on Simkl gets marked played here, with the original dates. Items you don't have yet are remembered and marked when they arrive after a library scan.</li>
+                <li><strong>Jellyfin to Simkl.</strong> Everything already marked played here is sent to your Simkl history with its dates. Items that came from step 1 are skipped.</li>
+                <li><strong>Keep in sync.</strong> Once both are done, tick the box. From then on, what you watch on Simkl shows up here (checked after a playback or a library scan, at most once an hour), and what you watch here already reaches Simkl in real time.</li>
+                    </ol>
+                    <p class="simkl-muted">Every step shows a preview first and can be undone for 7 days. Matching uses IMDb/TMDb/TVDB ids only; anime is left out for now. Automatic passes stop at 200 changes until you confirm.</p>
+                </details>
+
+                <div class="simkl-step">
+                    <span class="simkl-stepnum" id="simklStep1Num">1</span>
+                    <div class="simkl-grow">
+                        <div><strong>Simkl to Jellyfin</strong></div>
+                        <div class="simkl-muted" id="simklStep1Status">Loading...</div>
+                        <label style="margin-top:0.3rem;">
+                            <input type="checkbox" id="simklImportUnwatch"/>
+                            <span>On a full run, also unmark items gone from my Simkl history (only items step 1 marked)</span>
+                        </label>
+                        <div class="simkl-actions" style="flex-wrap:wrap;">
+                            <button class="simkl-btn" type="button" id="simklImportPreview">Preview</button>
+                            <button class="simkl-btn primary" type="button" id="simklImportApply">Import</button>
+                            <button class="simkl-btn" type="button" id="simklImportUndo" style="display:none;">Undo</button>
+                        </div>
+                    </div>
                 </div>
-                <label style="margin-top:0.4rem;">
-                    <input type="checkbox" id="simklImportUnwatch"/>
-                    <span>Also unmark items that disappear from my Simkl history</span>
-                </label>
-                <div class="simkl-hint">Only items this import marked, only on a full Preview + Apply. Off by default.</div>
-                <div class="simkl-muted" id="simklImportStatus" style="margin-top:0.4rem;"></div>
-                <div class="simkl-actions" style="flex-wrap:wrap;">
-                    <button class="simkl-btn" type="button" id="simklImportPreview">Preview</button>
-                    <button class="simkl-btn primary" type="button" id="simklImportApply">Apply initial import</button>
-                    <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Sync now</button>
-                    <button class="simkl-btn primary" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
-                    <button class="simkl-btn" type="button" id="simklImportUndo" style="display:none;">Undo last pass</button>
+
+                <div class="simkl-step">
+                    <span class="simkl-stepnum" id="simklStep2Num">2</span>
+                    <div class="simkl-grow">
+                        <div><strong>Jellyfin to Simkl</strong></div>
+                        <div class="simkl-muted" id="simklStep2Status">Loading...</div>
+                        <div class="simkl-actions" style="flex-wrap:wrap;">
+                            <button class="simkl-btn" type="button" id="simklExportPreview">Preview</button>
+                            <button class="simkl-btn primary" type="button" id="simklExport">Export</button>
+                            <button class="simkl-btn" type="button" id="simklExportUndo" style="display:none;">Undo</button>
+                        </div>
+                    </div>
                 </div>
-                <pre class="simkl-muted" id="simklImportResult" hidden style="white-space:pre-wrap;max-height:16rem;overflow:auto;font-family:inherit;"></pre>
+
+                <div class="simkl-step">
+                    <span class="simkl-stepnum" id="simklStep3Num">3</span>
+                    <div class="simkl-grow">
+                        <div><strong>Keep in sync</strong></div>
+                        <label style="margin-top:0.3rem;">
+                            <input type="checkbox" id="simklImportFromSimkl"/>
+                            <span>Keep Jellyfin in sync with my Simkl history</span>
+                        </label>
+                        <div class="simkl-muted" id="simklStep3Hint">Available once steps 1 and 2 are done. Tick, then Save.</div>
+                        <div id="simklSyncActive" class="simkl-syncactive" style="display:none;"><span class="simkl-syncdot"></span><span id="simklSyncActiveText"></span></div>
+                        <div class="simkl-actions" style="flex-wrap:wrap;">
+                            <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Sync now</button>
+                            <button class="simkl-btn primary" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
+                        </div>
+                    </div>
+                </div>
+                <pre class="simkl-muted" id="simklImportResult" style="display:none;white-space:pre-wrap;max-height:16rem;overflow:auto;font-family:inherit;"></pre>
             </div>
             <div class="simkl-opt">
                 <label>
@@ -429,51 +476,87 @@
                 'SyncMarkPlayed', 'SyncMarkUnplayed', 'EnableRewatches', 'ImportFromSimkl', 'ImportUnwatch'];
 
             function renderImportStatus() {
-                var box = el('simklImportStatus');
-                box.textContent = 'Loading import status...';
+                var show = function (id, on) { el(id).style.display = on ? '' : 'none'; };
+                var fmt = function (d) { return d ? String(d).replace('T', ' ').slice(0, 16) + ' UTC' : ''; };
                 return api('/Simkl/Me/Import/Status').then(function (st) {
-                    var parts = [];
-                    parts.push(pick(st, 'Enabled') ? 'Import enabled.' : 'Import disabled (tick the box and Save to enable).');
-                    parts.push(pick(st, 'InitialDone') ? 'Initial import done.' : 'Initial import not run yet.');
-                    if (pick(st, 'LastCheckUtc')) { parts.push('Last check: ' + String(pick(st, 'LastCheckUtc')).replace('T', ' ').slice(0, 16) + ' UTC.'); }
-                    if (pick(st, 'UnmatchedCount') > 0) { parts.push(pick(st, 'UnmatchedCount') + ' Simkl item(s) not in the library yet (retried after each scan).'); }
-                    if (pick(st, 'LastReport')) { parts.push('Last pass: ' + pick(st, 'LastReport')); }
-                    if (pick(st, 'PendingConfirmation') > 0) { parts.push(pick(st, 'PendingConfirmation') + ' change(s) are waiting for your confirmation.'); }
-                    box.textContent = parts.join(' ');
-                    var show = function (id, on) { el(id).style.display = on ? '' : 'none'; };
-                    show('simklImportApply', true);
-                    el('simklImportApply').textContent = pick(st, 'InitialDone') ? 'Run a full pass' : 'Apply initial import';
-                    show('simklImportSync', !!pick(st, 'InitialDone'));
-                    show('simklImportConfirm', pick(st, 'PendingConfirmation') > 0);
+                    var done1 = !!pick(st, 'InitialDone');
+                    var done2 = !!pick(st, 'ExportDone');
+                    var active = !!pick(st, 'SyncActive');
+                    el('simklStep1Num').classList.toggle('done', done1);
+                    el('simklStep2Num').classList.toggle('done', done2);
+                    el('simklStep3Num').classList.toggle('done', active);
+
+                    var t1 = done1 ? 'Done. ' : 'Not done yet: Preview, then Import. ';
+                    if (pick(st, 'LastReport')) { t1 += 'Last run ' + pick(st, 'LastReport') + ' '; }
+                    if (pick(st, 'UnmatchedCount') > 0) { t1 += pick(st, 'UnmatchedCount') + ' Simkl item(s) are not in the library yet and will be marked after a library scan. '; }
+                    if (pick(st, 'PendingConfirmation') > 0) { t1 += pick(st, 'PendingConfirmation') + ' change(s) are waiting for your confirmation (step 3). '; }
+                    el('simklStep1Status').textContent = t1;
+                    el('simklImportApply').textContent = done1 ? 'Run a full pass' : 'Import';
                     show('simklImportUndo', !!pick(st, 'CanUndo'));
-                    if (pick(st, 'CanUndo')) {
-                        el('simklImportUndo').textContent = 'Undo last pass (' + pick(st, 'UndoCount') + ' item(s))';
+                    if (pick(st, 'CanUndo')) { el('simklImportUndo').textContent = 'Undo (' + pick(st, 'UndoCount') + ' item(s))'; }
+
+                    var t2 = done2 ? 'Done. ' : 'Not done yet: Preview, then Export. ';
+                    if (pick(st, 'ExportLastReport')) { t2 += 'Last run ' + pick(st, 'ExportLastReport') + ' '; }
+                    el('simklStep2Status').textContent = t2;
+                    el('simklExport').textContent = done2 ? 'Export again' : 'Export';
+                    show('simklExportUndo', !!pick(st, 'CanUndoExport'));
+                    if (pick(st, 'CanUndoExport')) { el('simklExportUndo').textContent = 'Undo (' + pick(st, 'ExportUndoCount') + ' item(s))'; }
+
+                    el('simklImportFromSimkl').disabled = !(done1 && done2);
+                    var hint = el('simklStep3Hint');
+                    hint.textContent = (done1 && done2)
+                        ? (active ? '' : 'Steps 1 and 2 are done. Tick the box, then Save, to keep both sides aligned from now on.')
+                        : 'Available once steps 1 and 2 are done. Tick, then Save.';
+                    hint.style.display = hint.textContent ? '' : 'none';
+                    var activeBox = el('simklSyncActive');
+                    if (active) {
+                        el('simklSyncActiveText').textContent = 'Sync active' +
+                            (pick(st, 'LastCheckUtc') ? ' \u00b7 last check ' + fmt(pick(st, 'LastCheckUtc')) : '') +
+                            ' \u00b7 ' + (pick(st, 'ImportedCount') || 0) + ' item(s) brought from Simkl, ' + (pick(st, 'ExportedCount') || 0) + ' sent to Simkl';
+                        if (activeBox.style.display === 'none') {
+                            activeBox.classList.remove('simkl-syncon');
+                            void activeBox.offsetWidth;
+                            activeBox.classList.add('simkl-syncon');
+                        }
+                        activeBox.style.display = '';
+                    } else {
+                        activeBox.style.display = 'none';
                     }
+                    show('simklImportSync', done1);
+                    show('simklImportConfirm', pick(st, 'PendingConfirmation') > 0);
                 }).catch(function (err) {
                     console.error(err);
-                    box.textContent = '';
+                    el('simklStep1Status').textContent = '';
+                    el('simklStep2Status').textContent = '';
                 });
             }
 
             function importAction(kind) {
                 var questions = {
-                    apply: 'Run a full pass now? Everything you watched on Simkl and that exists in the library will be marked played (and, if the option is on, items gone from Simkl that this import had marked will be unmarked). You can undo it for 7 days.',
+                    apply: 'Run step 1 now? Everything you watched on Simkl and that exists in the library will be marked played (and, if the option is on, items gone from Simkl that step 1 had marked will be unmarked). You can undo it for 7 days.',
+                    'export': 'Run step 2 now? Everything marked played in Jellyfin will be sent to your Simkl history, with the dates. You can undo it for 7 days.',
+                    'export-undo': 'Remove from your Simkl history everything the last export sent?',
                     confirm: 'Apply all the waiting changes?',
-                    undo: 'Undo the last import pass?'
+                    undo: 'Undo the last step 1 pass?'
                 };
                 if (questions[kind] && !window.confirm(questions[kind])) {
                     return;
                 }
-                var path = kind === 'confirm' ? 'Sync?all=true' : kind.charAt(0).toUpperCase() + kind.slice(1);
+                var paths = { preview: 'Preview', apply: 'Apply', sync: 'Sync', confirm: 'Sync?all=true', undo: 'Undo',
+                    'export-preview': 'ExportPreview', 'export': 'Export', 'export-undo': 'ExportUndo' };
                 var result = el('simklImportResult');
-                result.hidden = false;
+                result.style.display = '';
                 result.textContent = 'Working... this can take a minute on a large history.';
-                api('/Simkl/Me/Import/' + path, { method: 'POST' }).then(function (r) {
+                api('/Simkl/Me/Import/' + paths[kind], { method: 'POST' }).then(function (r) {
                     var lines = [pick(r, 'Message') || ''];
-                    if (kind !== 'undo') {
-                        lines.push('Episodes to mark: ' + (pick(r, 'MarkedEpisodes') || 0) + ' | Movies to mark: ' + (pick(r, 'MarkedMovies') || 0)
-                            + ' | To unmark: ' + (pick(r, 'Unmarked') || 0) + ' | Already played: ' + (pick(r, 'AlreadyPlayed') || 0)
-                            + ' | Not in library: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0)) + ' item(s) in ' + (pick(r, 'UnmatchedShows') || 0) + ' unknown show(s)');
+                    var isExport = kind.indexOf('export') === 0;
+                    if (kind !== 'undo' && kind !== 'export-undo') {
+                        lines.push(isExport
+                            ? 'Episodes to send: ' + (pick(r, 'MarkedEpisodes') || 0) + ' | Movies to send: ' + (pick(r, 'MarkedMovies') || 0)
+                                + ' | Skipped (came from step 1): ' + (pick(r, 'AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0))
+                            : 'Episodes to mark: ' + (pick(r, 'MarkedEpisodes') || 0) + ' | Movies to mark: ' + (pick(r, 'MarkedMovies') || 0)
+                                + ' | To unmark: ' + (pick(r, 'Unmarked') || 0) + ' | Already played: ' + (pick(r, 'AlreadyPlayed') || 0)
+                                + ' | Not in library: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0)) + ' item(s) in ' + (pick(r, 'UnmatchedShows') || 0) + ' unknown show(s)');
                         var list = pick(r, 'Lines') || [];
                         if (list.length) {
                             lines.push('');
@@ -489,8 +572,10 @@
                 });
             }
 
-            ['Preview', 'Apply', 'Sync', 'Confirm', 'Undo'].forEach(function (name) {
-                el('simklImport' + name).addEventListener('click', function () { importAction(name.toLowerCase()); });
+            [['simklImportPreview', 'preview'], ['simklImportApply', 'apply'], ['simklImportUndo', 'undo'],
+                ['simklExportPreview', 'export-preview'], ['simklExport', 'export'], ['simklExportUndo', 'export-undo'],
+                ['simklImportSync', 'sync'], ['simklImportConfirm', 'confirm']].forEach(function (pair) {
+                el(pair[0]).addEventListener('click', function () { importAction(pair[1]); });
             });
 
             function applyOptions(options) {

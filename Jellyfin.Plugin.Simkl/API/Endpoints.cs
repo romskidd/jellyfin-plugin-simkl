@@ -83,6 +83,42 @@ namespace Jellyfin.Plugin.Simkl.API
         }
 
         /// <summary>
+        /// Lists what an export of a user's played history to Simkl would send.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("users/import/{userId}/export-preview")]
+        [Authorize(Policy = "RequiresElevation")]
+        public async Task<ActionResult<ImportReport>> ExportPreview([FromRoute] Guid userId)
+        {
+            return Ok(await _importService.ExportPreviewAsync(userId).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Sends a user's played history to Simkl (step 2).
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("users/import/{userId}/export")]
+        [Authorize(Policy = "RequiresElevation")]
+        public async Task<ActionResult<ImportReport>> Export([FromRoute] Guid userId)
+        {
+            return Ok(await _importService.ExportApplyAsync(userId).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Removes from Simkl what a user's last export sent.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("users/import/{userId}/export-undo")]
+        [Authorize(Policy = "RequiresElevation")]
+        public async Task<ActionResult<ImportReport>> ExportUndo([FromRoute] Guid userId)
+        {
+            return Ok(await _importService.ExportUndoAsync(userId).ConfigureAwait(false));
+        }
+
+        /// <summary>
         /// Reverts the last import pass of a user.
         /// </summary>
         /// <param name="userId">The user id.</param>
