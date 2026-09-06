@@ -221,7 +221,11 @@ namespace Jellyfin.Plugin.Simkl.Services
             }
             finally
             {
-                if (e.Session != null)
+                // Forget the session unless it already moved on to another item
+                // (the next episode started before this stop was reported).
+                if (e.Session != null
+                    && _sessions.TryGetValue(e.Session.Id, out var current)
+                    && (e.MediaInfo == null || current.ItemId == e.MediaInfo.Id))
                 {
                     _sessions.TryRemove(e.Session.Id, out _);
                 }

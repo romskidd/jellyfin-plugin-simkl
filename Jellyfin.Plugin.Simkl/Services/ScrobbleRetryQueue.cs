@@ -44,6 +44,7 @@ namespace Jellyfin.Plugin.Simkl.Services
         private readonly List<PendingScrobble> _pending = new List<PendingScrobble>();
         private readonly object _lock = new object();
         private readonly Timer _timer;
+        private int _retrying;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScrobbleRetryQueue"/> class.
@@ -141,6 +142,25 @@ namespace Jellyfin.Plugin.Simkl.Services
         }
 
         private async Task RetryAllAsync()
+        {
+            // A slow pass (many entries, paced requests) must not overlap the next
+            // tick, or the same watch could be sent twice.
+            if (Interlocked.Exchange(ref _retrying, 1) == 1)
+            {
+                return;
+            }
+
+            try
+            {
+                await RetryAllCoreAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _retrying, 0);
+            }
+        }
+
+        private async Task RetryAllCoreAsync()
         {
             List<PendingScrobble> snapshot;
             lock (_lock)

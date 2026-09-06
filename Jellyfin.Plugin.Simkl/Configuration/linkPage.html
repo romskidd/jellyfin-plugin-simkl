@@ -621,7 +621,7 @@
                     if (kind !== 'undo' && kind !== 'export-undo') {
                         lines.push(isExport
                             ? 'Episodes to send: ' + (pick(r, 'MarkedEpisodes') || 0) + ' | Movies to send: ' + (pick(r, 'MarkedMovies') || 0)
-                                + ' | Already on Simkl (step 1 or sent before): ' + (pick(r, 'AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0))
+                                + ' | Already on Simkl: ' + (pick(r, 'AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0))
                             : 'Episodes to mark: ' + (pick(r, 'MarkedEpisodes') || 0) + ' | Movies to mark: ' + (pick(r, 'MarkedMovies') || 0)
                                 + ' | To unmark: ' + (pick(r, 'Unmarked') || 0) + ' | Already played: ' + (pick(r, 'AlreadyPlayed') || 0) + ' | Excluded libraries: ' + (pick(r, 'Excluded') || 0)
                                 + ' | Not in library: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0)) + ' item(s) in ' + (pick(r, 'UnmatchedShows') || 0) + ' unknown show(s)');
@@ -775,7 +775,8 @@
 
                     var expires = (code.expires_in || code.ExpiresIn || 900);
                     var deadline = Date.now() + expires * 1000;
-                    var interval = (code.Interval || code.interval || 5) * 1000;
+                    // Never poll faster than the 5 s Simkl asks for.
+                    var interval = Math.max(5, Number(code.interval || code.Interval) || 5) * 1000;
 
                     countdownTimer = window.setInterval(function () {
                         var left = Math.max(0, Math.round((deadline - Date.now()) / 1000));

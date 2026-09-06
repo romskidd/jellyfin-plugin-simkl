@@ -36,6 +36,7 @@ namespace Jellyfin.Plugin.Simkl.API
         private readonly ConcurrentDictionary<string, CachedStats> _statsCache = new ConcurrentDictionary<string, CachedStats>(StringComparer.Ordinal);
         private readonly ConcurrentDictionary<string, CachedSettings> _settingsCache = new ConcurrentDictionary<string, CachedSettings>(StringComparer.Ordinal);
         private readonly ConcurrentDictionary<string, ActivitySnapshot> _activityCache = new ConcurrentDictionary<string, ActivitySnapshot>(StringComparer.Ordinal);
+        private readonly PostGate _globalGate = new PostGate();
         private readonly JsonSerializerOptions _jsonSerializerOptions;
         private readonly JsonSerializerOptions _caseInsensitiveJsonSerializerOptions;
 
@@ -81,6 +82,12 @@ namespace Jellyfin.Plugin.Simkl.API
         /// requests in one second, so reads are paced along with writes.
         /// </summary>
         private static readonly TimeSpan _minPostInterval = TimeSpan.FromSeconds(1.1);
+
+        // Simkl's burst detector counts requests per second from one address,
+        // whichever user they belong to. A server-wide floor keeps two profiles
+        // from firing in the same second and covers the anonymous calls (PIN,
+        // file search) too.
+        private static readonly TimeSpan _minGlobalInterval = TimeSpan.FromMilliseconds(600);
 
         /// <summary>
         /// How long one reading of <c>GET /sync/activities</c> is reused. It
@@ -187,6 +194,10 @@ namespace Jellyfin.Plugin.Simkl.API
                 }
 
                 return settings;
+            }
+            catch (InvalidTokenException)
+            {
+                return new UserSettings { Error = "user_token_failed" };
             }
             catch (HttpRequestException e) when (e.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
@@ -759,8 +770,8 @@ namespace Jellyfin.Plugin.Simkl.API
             using var options = GetOptions(userToken);
             options.RequestUri = BuildUri(url);
             options.Method = HttpMethod.Get;
-            var responseMessage = await SendThrottledAsync(options, userToken);
-            return await responseMessage.Content.ReadFromJsonAsync<T>(_jsonSerializerOptions);
+            var responseMessage = await SendThrottledAsync(options, userToken).ConfigureAwait(false);
+            return await ReadResponse<T>(responseMessage, url, userToken, _jsonSerializerOptions).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -784,9 +795,8 @@ namespace Jellyfin.Plugin.Simkl.API
                     MediaTypeNames.Application.Json);
             }
 
-            var responseMessage = await SendThrottledAsync(options, userToken);
-
-            return await responseMessage.Content.ReadFromJsonAsync<T1>(_caseInsensitiveJsonSerializerOptions);
+            var responseMessage = await SendThrottledAsync(options, userToken).ConfigureAwait(false);
+            return await ReadResponse<T1>(responseMessage, url, userToken, _caseInsensitiveJsonSerializerOptions).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -802,7 +812,7 @@ namespace Jellyfin.Plugin.Simkl.API
             var client = _httpClientFactory.CreateClient(NamedClient.Default);
             if (string.IsNullOrEmpty(userToken))
             {
-                return await client.SendAsync(request).ConfigureAwait(false);
+                return await SendGloballyPacedAsync(client, request).ConfigureAwait(false);
             }
 
             var gate = _postGates.GetOrAdd(userToken, _ => new PostGate());
@@ -817,7 +827,7 @@ namespace Jellyfin.Plugin.Simkl.API
 
                 try
                 {
-                    return await client.SendAsync(request).ConfigureAwait(false);
+                    return await SendGloballyPacedAsync(client, request).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -830,11 +840,55 @@ namespace Jellyfin.Plugin.Simkl.API
             }
         }
 
+        private async Task<HttpResponseMessage> SendGloballyPacedAsync(HttpClient client, HttpRequestMessage request)
+        {
+            await _globalGate.Lock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var wait = _minGlobalInterval - (DateTime.UtcNow - _globalGate.LastPostUtc);
+                if (wait > TimeSpan.Zero)
+                {
+                    await Task.Delay(wait).ConfigureAwait(false);
+                }
+
+                try
+                {
+                    return await client.SendAsync(request).ConfigureAwait(false);
+                }
+                finally
+                {
+                    _globalGate.LastPostUtc = DateTime.UtcNow;
+                }
+            }
+            finally
+            {
+                _globalGate.Lock.Release();
+            }
+        }
+
         /// <summary>
-        /// Reads <c>GET /sync/activities</c>, the cheap way to know whether the
-        /// user's settings or history changed. One reading is reused for a few
-        /// minutes so a page load costs a single call.
+        /// Reads a JSON answer. A 401 on an authenticated call drops the token
+        /// (Simkl no longer accepts it) and any other failure yields null, so a
+        /// caller never mistakes an error page for an accepted request.
         /// </summary>
+        private async Task<T?> ReadResponse<T>(HttpResponseMessage response, string url, string? userToken, JsonSerializerOptions options)
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized && !string.IsNullOrEmpty(userToken))
+            {
+                _logger.LogError("Simkl rejected the user token on {Url}; the profile has to link again", url);
+                DropToken(userToken);
+                throw new InvalidTokenException("Invalid user token");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogDebug("{Url} returned {Status}", url, response.StatusCode);
+                return default;
+            }
+
+            return await response.Content.ReadFromJsonAsync<T>(options).ConfigureAwait(false);
+        }
+
         private async Task<ActivitySnapshot> GetActivityAsync(string userToken)
         {
             if (_activityCache.TryGetValue(userToken, out var memo)

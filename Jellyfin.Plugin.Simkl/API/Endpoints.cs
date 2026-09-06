@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Simkl.API.Objects;
 using Jellyfin.Plugin.Simkl.API.Responses;
@@ -173,6 +174,11 @@ namespace Jellyfin.Plugin.Simkl.API
         [Authorize(Policy = "RequiresElevation")]
         public async Task<ActionResult<CodeStatusResponse?>> GetPinStatus([FromRoute] string userCode)
         {
+            if (string.IsNullOrEmpty(userCode) || userCode.Length > 16 || !userCode.All(char.IsLetterOrDigit))
+            {
+                return BadRequest();
+            }
+
             return await _simklApi.GetCodeStatus(userCode);
         }
 
@@ -186,7 +192,7 @@ namespace Jellyfin.Plugin.Simkl.API
         public async Task<ActionResult<UserSettings?>> GetUserSettings([FromRoute] Guid userId)
         {
             var userConfiguration = SimklPlugin.Instance?.Configuration.GetByGuid(userId);
-            if (userConfiguration == null)
+            if (userConfiguration == null || string.IsNullOrEmpty(userConfiguration.UserToken))
             {
                 return NotFound();
             }

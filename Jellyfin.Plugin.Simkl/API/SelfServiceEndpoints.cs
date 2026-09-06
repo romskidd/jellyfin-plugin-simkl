@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Jellyfin.Data;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Simkl.API.Objects;
 using Jellyfin.Plugin.Simkl.API.Responses;
 using Jellyfin.Plugin.Simkl.Services;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +36,7 @@ namespace Jellyfin.Plugin.Simkl.API
         private readonly LibraryFilter _libraryFilter;
         private readonly ScrobbleRetryQueue _retryQueue;
         private readonly SimklImportService _importService;
+        private readonly IUserManager _userManager;
         private readonly ILogger<SelfServiceEndpoints> _logger;
 
         /// <summary>
@@ -42,6 +47,7 @@ namespace Jellyfin.Plugin.Simkl.API
         /// <param name="libraryFilter">Instance of the <see cref="LibraryFilter"/>.</param>
         /// <param name="retryQueue">Instance of the <see cref="ScrobbleRetryQueue"/>.</param>
         /// <param name="importService">Instance of the <see cref="SimklImportService"/>.</param>
+        /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{SelfServiceEndpoints}"/> interface.</param>
         public SelfServiceEndpoints(
             SimklApi simklApi,
@@ -49,8 +55,10 @@ namespace Jellyfin.Plugin.Simkl.API
             LibraryFilter libraryFilter,
             ScrobbleRetryQueue retryQueue,
             SimklImportService importService,
+            IUserManager userManager,
             ILogger<SelfServiceEndpoints> logger)
         {
+            _userManager = userManager;
             _simklApi = simklApi;
             _authContext = authContext;
             _libraryFilter = libraryFilter;
@@ -183,8 +191,15 @@ namespace Jellyfin.Plugin.Simkl.API
                 return Unauthorized();
             }
 
+            // Only the libraries this user may see: the names of the others are
+            // none of their business.
+            var user = _userManager.GetUserById(userId.Value);
+            var all = user != null && user.HasPermission(PermissionKind.EnableAllFolders);
+            var allowed = user == null
+                ? new HashSet<Guid>()
+                : new HashSet<Guid>(user.GetPreferenceValues<Guid>(PreferenceKind.EnabledFolders));
             return Ok(_libraryFilter.GetLibraries()
-                .Where(l => l.ItemId != null)
+                .Where(l => l.ItemId != null && (all || (Guid.TryParse(l.ItemId, out var id) && allowed.Contains(id))))
                 .Select(l => new { Id = l.ItemId, l.Name })
                 .ToArray());
         }
@@ -365,7 +380,10 @@ namespace Jellyfin.Plugin.Simkl.API
             var plugin = SimklPlugin.Instance;
             if (plugin != null)
             {
-                plugin.Configuration.GetOrCreate(userId.Value).UserToken = string.Empty;
+                var config = plugin.Configuration.GetOrCreate(userId.Value);
+                config.UserToken = string.Empty;
+                config.LinkExpired = false;
+                config.ForgetCachedAccount();
                 plugin.SaveConfiguration();
             }
 
@@ -402,7 +420,13 @@ namespace Jellyfin.Plugin.Simkl.API
             config.ImportFromSimkl = options.ImportFromSimkl;
             config.ImportUnwatch = options.ImportUnwatch;
             config.MinLength = Math.Clamp(options.MinLength, 0, 600);
-            config.ExcludedLibraries = options.ExcludedLibraries?.ToArray() ?? Array.Empty<string>();
+            var known = new HashSet<string>(
+                _libraryFilter.GetLibraries().Where(l => l.ItemId != null).Select(l => l.ItemId!),
+                StringComparer.OrdinalIgnoreCase);
+            config.ExcludedLibraries = (options.ExcludedLibraries ?? Array.Empty<string>())
+                .Where(known.Contains)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
             plugin.SaveConfiguration();
 
             return NoContent();

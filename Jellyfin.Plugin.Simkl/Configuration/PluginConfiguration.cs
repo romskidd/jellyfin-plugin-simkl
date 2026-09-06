@@ -57,6 +57,13 @@ namespace Jellyfin.Plugin.Simkl.Configuration
         /// <param name="userToken">User token.</param>
         public void DeleteUserToken(string userToken)
         {
+            if (string.IsNullOrEmpty(userToken))
+            {
+                // An unlinked profile has an empty token: matching it would flag
+                // every never-linked profile as "link expired".
+                return;
+            }
+
             foreach (var config in UserConfigs)
             {
                 if (config.UserToken == userToken)

@@ -522,7 +522,8 @@
                                     <p class="simklMuted" style="margin-top:0;">
                                         Everything needed for a bug report: plugin and server versions, a summary of each profile's
                                         settings (no tokens), and the plugin's recent lines from the Jellyfin log. Anything that looks
-                                        like a token is masked. Copy it and paste it in your GitHub issue or message.
+                                        like a token is masked; the log lines do carry Jellyfin profile names and titles.
+                                        Copy it and paste it in your GitHub issue or message.
                                     </p>
                                     <div class="simklStepActions">
                                         <button is="emby-button" type="button" class="raised" onclick="SimklConfig.loadLogs();"><span>Refresh</span></button>
@@ -765,7 +766,7 @@
                     if (kind !== 'undo' && kind !== 'export-undo') {
                         lines.push(isExport
                             ? 'Episodes to send: ' + (g('MarkedEpisodes') || 0) + ' | Movies to send: ' + (g('MarkedMovies') || 0)
-                                + ' | Already on Simkl (step 1 or sent before): ' + (g('AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0))
+                                + ' | Already on Simkl: ' + (g('AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0))
                             : 'Episodes to mark: ' + (g('MarkedEpisodes') || 0) + ' | Movies to mark: ' + (g('MarkedMovies') || 0)
                                 + ' | To unmark: ' + (g('Unmarked') || 0) + ' | Already played: ' + (g('AlreadyPlayed') || 0) + ' | Excluded libraries: ' + (g('Excluded') || 0)
                                 + ' | Not in library: ' + ((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0)) + ' item(s) in ' + (g('UnmatchedShows') || 0) + ' unknown show(s)');
@@ -878,7 +879,14 @@
                     .call(document.querySelectorAll('#excludedLibraries input:checked'))
                     .map(function (input) { return input.value; });
 
-                ApiClient.updatePluginConfiguration(this.guid, this.configCache).then(Dashboard.processPluginConfigurationUpdateResult);
+                ApiClient.updatePluginConfiguration(this.guid, this.configCache).then(function (result) {
+                    Dashboard.processPluginConfigurationUpdateResult(result);
+                    // The server keeps its own account and sync fields: reload them so
+                    // the next save posts current values, not this page's old copy.
+                    return ApiClient.getPluginConfiguration(SimklConfig.guid).then(function (fresh) {
+                        SimklConfig.configCache = fresh;
+                    });
+                });
             },
             populateOptionsContainer: async function (userConfig) {
                 // The connection label and stats are decorative: never let them
@@ -1077,7 +1085,9 @@
 
 
                     await ApiClient.updatePluginConfiguration(this.guid, this.configCache);
-                    await this.loadConfig(uguid);
+                    // The server fills in the account details itself: reload its copy.
+                    const fresh = await ApiClient.getPluginConfiguration(this.guid);
+                    await this.loadConfig(uguid, fresh);
                 } else {
                     Dashboard.alert("Error logging in");
                 }
@@ -1110,8 +1120,11 @@
                     console.log("User not found " + uguid);
                 }
 
-                window.ApiClient.updatePluginConfiguration(this.guid, this.configCache);
-                this.loadConfig(uguid);
+                window.ApiClient.updatePluginConfiguration(this.guid, this.configCache).then(function () {
+                    return ApiClient.getPluginConfiguration(SimklConfig.guid);
+                }).then(function (fresh) {
+                    return SimklConfig.loadConfig(uguid, fresh);
+                });
             }
         }
 
