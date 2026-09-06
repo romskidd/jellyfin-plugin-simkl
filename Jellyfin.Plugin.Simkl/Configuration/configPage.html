@@ -345,6 +345,7 @@
                         <button type="button" class="simklTab is-active" data-tab="account" onclick="SimklConfig.showTab('account');"><span class="material-icons" aria-hidden="true">person</span><span>Account</span></button>
                         <button type="button" class="simklTab" data-tab="scrobbling" onclick="SimklConfig.showTab('scrobbling');"><span class="material-icons" aria-hidden="true">play_circle</span><span>Scrobbling</span></button>
                         <button type="button" class="simklTab" data-tab="sync" onclick="SimklConfig.showTab('sync');"><span class="material-icons" aria-hidden="true">sync</span><span>Simkl sync</span></button>
+                        <button type="button" class="simklTab" data-tab="logs" onclick="SimklConfig.showTab('logs');"><span class="material-icons" aria-hidden="true">description</span><span>Logs</span></button>
                     </div>
                     <div class="simklTabPanels">
                             <div class="simklTabPanel" data-panel="account">
@@ -515,6 +516,22 @@
                         <pre class="simklMuted" id="importResult" style="display:none;white-space:pre-wrap;max-height:16rem;overflow:auto;margin-top:0.6rem;font-family:inherit;"></pre>
                     </div>
                             </div>
+                            <div class="simklTabPanel" data-panel="logs" style="display:none;">
+                                <div class="simklCard">
+                                    <div class="simklCardTitle">Diagnostic report</div>
+                                    <p class="simklMuted" style="margin-top:0;">
+                                        Everything needed for a bug report: plugin and server versions, a summary of each profile's
+                                        settings (no tokens), and the plugin's recent lines from the Jellyfin log. Anything that looks
+                                        like a token is masked. Copy it and paste it in your GitHub issue or message.
+                                    </p>
+                                    <div class="simklStepActions">
+                                        <button is="emby-button" type="button" class="raised" onclick="SimklConfig.loadLogs();"><span>Refresh</span></button>
+                                        <button is="emby-button" type="button" class="raised" onclick="SimklConfig.copyLogs();"><span>Copy report</span></button>
+                                        <a is="emby-linkbutton" class="raised button-link emby-button" href="https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/issues" target="_blank" rel="noopener" style="width:12em;margin:0;"><span>Open issues</span></a>
+                                    </div>
+                                    <pre id="simklLogs" class="simklMuted" style="white-space:pre-wrap;max-height:32rem;overflow:auto;margin-top:0.8rem;font-size:0.85em;">Open this tab to load the report.</pre>
+                                </div>
+                            </div>
                     </div>
 
                     <div class="simklActions">
@@ -623,6 +640,34 @@
                     panel.style.display = panel.getAttribute('data-panel') === name ? '' : 'none';
                 });
                 try { window.localStorage.setItem('simklConfigTab', name); } catch (e) { /* private mode */ }
+                if (name === 'logs' && !SimklConfig.logsLoaded) {
+                    SimklConfig.loadLogs();
+                }
+            },
+            logsLoaded: false,
+            loadLogs: function () {
+                const box = document.querySelector('#simklLogs');
+                box.textContent = 'Loading...';
+                return SimklAPI.getLogs(400).then(function (r) {
+                    box.textContent = (r && (r.Text || r.text)) || '(empty)';
+                    SimklConfig.logsLoaded = true;
+                    box.scrollTop = box.scrollHeight;
+                }).catch(function (err) {
+                    console.error(err);
+                    box.textContent = 'Could not load the report, see the browser console.';
+                });
+            },
+            copyLogs: function () {
+                const text = document.querySelector('#simklLogs').textContent || '';
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function () {
+                        Dashboard.alert('Report copied');
+                    }).catch(function () {
+                        Dashboard.alert('Select the report and copy it with Ctrl+C');
+                    });
+                } else {
+                    Dashboard.alert('Select the report and copy it with Ctrl+C');
+                }
             },
             restoreTab: function () {
                 let name = 'account';
@@ -1141,6 +1186,16 @@
                         console.log("Couldn't load libraries", result);
                         return null;
                     });
+            },
+            getLogs: function (lines) {
+                const request = {
+                    url: window.ApiClient.getUrl('Simkl/logs', { lines: lines }),
+                    type: 'GET',
+                    headers: {
+                        accept: 'application/json'
+                    }
+                };
+                return window.ApiClient.fetch(request);
             },
             importCall: function (secret, action, method) {
                 const request = {
