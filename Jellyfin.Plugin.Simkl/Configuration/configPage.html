@@ -529,7 +529,9 @@
                     if (g('LastReport')) { parts.push('Last pass: ' + g('LastReport')); }
                     if (g('PendingConfirmation') > 0) { parts.push(g('PendingConfirmation') + ' change(s) are waiting for your confirmation.'); }
                     box.textContent = parts.join(' ');
-                    document.querySelector('#importApplyBtn').hidden = !!g('InitialDone');
+                    const applyBtn = document.querySelector('#importApplyBtn');
+                    applyBtn.hidden = false;
+                    applyBtn.querySelector('span').textContent = g('InitialDone') ? 'Run a full pass' : 'Apply initial import';
                     document.querySelector('#importSyncBtn').hidden = !g('InitialDone');
                     document.querySelector('#importConfirmBtn').hidden = !(g('PendingConfirmation') > 0);
                     const undo = document.querySelector('#importUndoBtn');
@@ -546,7 +548,7 @@
                 const userId = SimklConfig.userSelector.value;
                 const result = document.querySelector('#importResult');
                 const questions = {
-                    apply: 'Apply the initial import now? Everything watched on Simkl and present in the library will be marked played for this profile. You can undo it for 7 days.',
+                    apply: 'Run a full pass now? Everything watched on Simkl and present in the library will be marked played for this profile (and, if the option is on, items gone from Simkl that this import had marked will be unmarked). You can undo it for 7 days.',
                     confirm: 'Apply all the waiting changes?',
                     undo: 'Undo the last import pass for this profile?'
                 };

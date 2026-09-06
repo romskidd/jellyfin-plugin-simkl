@@ -440,7 +440,8 @@
                     if (pick(st, 'LastReport')) { parts.push('Last pass: ' + pick(st, 'LastReport')); }
                     if (pick(st, 'PendingConfirmation') > 0) { parts.push(pick(st, 'PendingConfirmation') + ' change(s) are waiting for your confirmation.'); }
                     box.textContent = parts.join(' ');
-                    el('simklImportApply').hidden = !!pick(st, 'InitialDone');
+                    el('simklImportApply').hidden = false;
+                    el('simklImportApply').textContent = pick(st, 'InitialDone') ? 'Run a full pass' : 'Apply initial import';
                     el('simklImportSync').hidden = !pick(st, 'InitialDone');
                     el('simklImportConfirm').hidden = !(pick(st, 'PendingConfirmation') > 0);
                     el('simklImportUndo').hidden = !pick(st, 'CanUndo');
@@ -455,7 +456,7 @@
 
             function importAction(kind) {
                 var questions = {
-                    apply: 'Apply the initial import now? Everything you watched on Simkl and that exists in the library will be marked played. You can undo it for 7 days.',
+                    apply: 'Run a full pass now? Everything you watched on Simkl and that exists in the library will be marked played (and, if the option is on, items gone from Simkl that this import had marked will be unmarked). You can undo it for 7 days.',
                     confirm: 'Apply all the waiting changes?',
                     undo: 'Undo the last import pass?'
                 };
