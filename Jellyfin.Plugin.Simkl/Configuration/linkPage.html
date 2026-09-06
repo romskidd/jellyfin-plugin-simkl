@@ -100,6 +100,19 @@
             margin-top: 1rem;
         }
 
+        #simklSelfService .simkl-stepactions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 0.6rem;
+        }
+
+        #simklSelfService .simkl-stepactions .simkl-btn {
+            flex: 0 0 auto;
+            width: 11rem;
+            text-align: center;
+        }
+
         #simklSelfService .simkl-pin {
             margin: 1rem 0;
             padding: 0.9rem;
@@ -342,7 +355,7 @@
                             <input type="checkbox" id="simklImportUnwatch"/>
                             <span>On a full run, also unmark items gone from my Simkl history (only items step 1 marked)</span>
                         </label>
-                        <div class="simkl-actions" style="flex-wrap:wrap;">
+                        <div class="simkl-stepactions">
                             <button class="simkl-btn" type="button" id="simklImportPreview">Preview</button>
                             <button class="simkl-btn primary" type="button" id="simklImportApply">Import</button>
                             <button class="simkl-btn" type="button" id="simklImportUndo" style="display:none;">Undo</button>
@@ -355,7 +368,7 @@
                     <div class="simkl-grow">
                         <div><strong>Jellyfin to Simkl</strong></div>
                         <div class="simkl-muted" id="simklStep2Status">Loading...</div>
-                        <div class="simkl-actions" style="flex-wrap:wrap;">
+                        <div class="simkl-stepactions">
                             <button class="simkl-btn" type="button" id="simklExportPreview">Preview</button>
                             <button class="simkl-btn primary" type="button" id="simklExport">Export</button>
                             <button class="simkl-btn" type="button" id="simklExportUndo" style="display:none;">Undo</button>
@@ -373,7 +386,7 @@
                         </label>
                         <div class="simkl-muted" id="simklStep3Hint">Available once steps 1 and 2 are done. Tick, then Save.</div>
                         <div id="simklSyncActive" class="simkl-syncactive" style="display:none;"><span class="simkl-syncdot"></span><span id="simklSyncActiveText"></span></div>
-                        <div class="simkl-actions" style="flex-wrap:wrap;">
+                        <div class="simkl-stepactions">
                             <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Sync now</button>
                             <button class="simkl-btn primary" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
                         </div>

@@ -179,6 +179,19 @@
                     margin: 0 !important;
                 }
 
+                #SimklConfigurationPage .simklStepActions {
+                    display: flex;
+                    gap: 0.6em;
+                    flex-wrap: wrap;
+                    margin-top: 0.6em;
+                }
+
+                #SimklConfigurationPage .simklStepActions .raised {
+                    flex: 0 0 auto;
+                    width: 12em;
+                    margin: 0 !important;
+                }
+
                 #SimklConfigurationPage .simklLibs {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
@@ -453,7 +466,7 @@
                                     <input is="emby-checkbox" type="checkbox" id="ImportUnwatch"/>
                                     <span>On a full run, also unmark items gone from the Simkl history (only items step 1 marked)</span>
                                 </label></div>
-                                <div class="simklActions" style="margin-top:0.5rem;flex-wrap:wrap;">
+                                <div class="simklStepActions">
                                     <button is="emby-button" type="button" class="raised" onclick="SimklConfig.importAction('preview');"><span>Preview</span></button>
                                     <button is="emby-button" type="button" class="raised" id="step1ApplyBtn" onclick="SimklConfig.importAction('apply');"><span>Import</span></button>
                                     <button is="emby-button" type="button" class="raised" id="step1UndoBtn" style="display:none;" onclick="SimklConfig.importAction('undo');"><span>Undo</span></button>
@@ -466,7 +479,7 @@
                             <div class="simklGrow">
                                 <div><strong>Jellyfin to Simkl</strong></div>
                                 <div class="simklMuted" id="step2Status">Loading...</div>
-                                <div class="simklActions" style="margin-top:0.5rem;flex-wrap:wrap;">
+                                <div class="simklStepActions">
                                     <button is="emby-button" type="button" class="raised" onclick="SimklConfig.importAction('export-preview');"><span>Preview</span></button>
                                     <button is="emby-button" type="button" class="raised" id="step2ApplyBtn" onclick="SimklConfig.importAction('export');"><span>Export</span></button>
                                     <button is="emby-button" type="button" class="raised" id="step2UndoBtn" style="display:none;" onclick="SimklConfig.importAction('export-undo');"><span>Undo</span></button>
@@ -484,7 +497,7 @@
                                 </label></div>
                                 <div class="simklMuted" id="step3Hint">Available once steps 1 and 2 are done. Tick, then Save.</div>
                                 <div id="syncActiveBox" class="simklSyncActive" style="display:none;"><span class="simklSyncDot"></span><span id="syncActiveText"></span></div>
-                                <div class="simklActions" style="margin-top:0.5rem;flex-wrap:wrap;">
+                                <div class="simklStepActions">
                                     <button is="emby-button" type="button" class="raised" id="importSyncBtn" style="display:none;" onclick="SimklConfig.importAction('sync');"><span>Sync now</span></button>
                                     <button is="emby-button" type="button" class="raised" id="importConfirmBtn" style="display:none;" onclick="SimklConfig.importAction('confirm');"><span>Apply remaining changes</span></button>
                                 </div>
