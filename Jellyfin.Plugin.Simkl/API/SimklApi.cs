@@ -76,9 +76,9 @@ namespace Jellyfin.Plugin.Simkl.API
             "client_id=" + Apikey + "&app-name=" + Uri.EscapeDataString(AppName) + "&app-version=" + _appVersion;
 
         /// <summary>
-        /// Simkl allows one authenticated POST per second per user. Two writes
-        /// back to back (a lookup then a scrobble, a stop then a rewatch) would
-        /// trip a temporary block on the token, so writes are spaced out.
+        /// Minimum gap between two authenticated calls of the same user. Simkl
+        /// allows one write per second per user and flags bursts of three
+        /// requests in one second, so reads are paced along with writes.
         /// </summary>
         private static readonly TimeSpan _minPostInterval = TimeSpan.FromSeconds(1.1);
 
@@ -786,14 +786,17 @@ namespace Jellyfin.Plugin.Simkl.API
         }
 
         /// <summary>
-        /// Sends a request, spacing authenticated POSTs so one user never sends
-        /// more than one write per second, as Simkl's rate limits require.
-        /// Reads and unauthenticated calls go straight through.
+        /// Sends a request, spacing every authenticated call of a user at least
+        /// a second apart: Simkl allows one write per second per user, and its
+        /// burst detector flags three requests from one address in the same
+        /// second. A read followed by a write, or the two calls that fill the
+        /// settings cache right after linking, would otherwise land together.
+        /// Unauthenticated calls (PIN flow, file lookup) go straight through.
         /// </summary>
         private async Task<HttpResponseMessage> SendThrottledAsync(HttpRequestMessage request, string? userToken)
         {
             var client = _httpClientFactory.CreateClient(NamedClient.Default);
-            if (request.Method != HttpMethod.Post || string.IsNullOrEmpty(userToken))
+            if (string.IsNullOrEmpty(userToken))
             {
                 return await client.SendAsync(request).ConfigureAwait(false);
             }
