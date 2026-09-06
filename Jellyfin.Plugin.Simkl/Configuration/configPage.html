@@ -720,7 +720,7 @@
                     if (kind !== 'undo' && kind !== 'export-undo') {
                         lines.push(isExport
                             ? 'Episodes to send: ' + (g('MarkedEpisodes') || 0) + ' | Movies to send: ' + (g('MarkedMovies') || 0)
-                                + ' | Skipped (came from step 1): ' + (g('AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0))
+                                + ' | Already on Simkl (step 1 or sent before): ' + (g('AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0))
                             : 'Episodes to mark: ' + (g('MarkedEpisodes') || 0) + ' | Movies to mark: ' + (g('MarkedMovies') || 0)
                                 + ' | To unmark: ' + (g('Unmarked') || 0) + ' | Already played: ' + (g('AlreadyPlayed') || 0) + ' | Excluded libraries: ' + (g('Excluded') || 0)
                                 + ' | Not in library: ' + ((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0)) + ' item(s) in ' + (g('UnmatchedShows') || 0) + ' unknown show(s)');

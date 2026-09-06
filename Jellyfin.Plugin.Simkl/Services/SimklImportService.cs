@@ -1178,16 +1178,21 @@ namespace Jellyfin.Plugin.Simkl.Services
         {
             var plan = new ExportPlan();
             HashSet<Guid> imported;
+            HashSet<Guid> exported;
             lock (_stateLock)
             {
-                imported = new HashSet<Guid>(LoadState().For(user.Id).Imported);
+                var state = LoadState().For(user.Id);
+                imported = new HashSet<Guid>(state.Imported);
+                exported = new HashSet<Guid>(state.Exported);
             }
 
             var shows = new Dictionary<Guid, (BaseItem Series, Dictionary<string, string> Ids, SortedDictionary<int, SortedDictionary<int, DateTime?>> Seasons)>();
             var movies = new List<SimklMovie>();
             foreach (var item in items)
             {
-                if (skipImported && imported.Contains(item.Id))
+                // Items that came from Simkl (step 1) or were already sent by a
+                // previous export are on Simkl already.
+                if (skipImported && (imported.Contains(item.Id) || exported.Contains(item.Id)))
                 {
                     plan.SkippedImported++;
                     continue;
