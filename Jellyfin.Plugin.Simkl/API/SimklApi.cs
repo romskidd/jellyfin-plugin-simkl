@@ -162,7 +162,11 @@ namespace Jellyfin.Plugin.Simkl.API
                 && (activity.SettingsStamp == null
                     || string.Equals(activity.SettingsStamp, cached.Stamp, StringComparison.Ordinal)))
             {
-                // Unchanged, or the activity call failed transiently: the snapshot stays good.
+                // Unchanged, or the activity call failed transiently: the snapshot
+                // stays good. Simkl hands the same token to every profile linked
+                // to the same account, so a profile that was linked after the
+                // snapshot was taken still gets the account details.
+                StoreSettings(userToken, cached, onlyMissing: true);
                 return cached.Settings;
             }
 
@@ -999,7 +1003,7 @@ namespace Jellyfin.Plugin.Simkl.API
             return null;
         }
 
-        private static void StoreSettings(string userToken, CachedSettings entry)
+        private static void StoreSettings(string userToken, CachedSettings entry, bool onlyMissing = false)
         {
             var configs = SimklPlugin.Instance?.Configuration.UserConfigs;
             if (configs == null)
@@ -1010,7 +1014,8 @@ namespace Jellyfin.Plugin.Simkl.API
             var changed = false;
             foreach (var config in configs)
             {
-                if (string.Equals(config.UserToken, userToken, StringComparison.Ordinal))
+                if (string.Equals(config.UserToken, userToken, StringComparison.Ordinal)
+                    && (!onlyMissing || config.SimklAccountId == null))
                 {
                     config.SimklUserName = entry.Settings.User?.Name;
                     config.SimklAccountId = entry.Settings.Account?.Id;
