@@ -1,0 +1,80 @@
+[
+    {
+        "guid": "03a7c840-6154-471f-8be3-856cdc26d500",
+        "name": "RK Simkl Scrobbler",
+        "description": "Unofficial plugin, not affiliated with or endorsed by Simkl or Jellyfin. Scrobble your watched Movies, TV Shows and Anime to Simkl in real time. Reports start, pause and stop as you watch, shows the title in your Simkl 'Watching now' banner, and marks items watched automatically once you stop past 80%.",
+        "overview": "Real-time Simkl scrobbling for Jellyfin (unofficial)",
+        "owner": "romskidd",
+        "category": "General",
+        "imageUrl": "",
+        "versions": [
+            {
+                "version": "9.6.0.0",
+                "changelog": "9.6.0.0 Beta 1. Beta 1 of the Simkl sync (experimental, off by default). A new \"Simkl sync\" tab sets it up in three steps. 1. Simkl to Jellyfin: marks as played, in Jellyfin, the episodes and movies your Simkl history lists (watch date and play count included; only items present in your libraries, unmatched ones are retried after each library scan). 2. Jellyfin to Simkl: sends to Simkl what Jellyfin has as played and Simkl does not have yet. 3. Keep in sync: follows the Simkl history after each playback and library scan, at most once an hour. Each step shows a preview before anything is written, both directions can be undone for 7 days, a pass that would change more than 200 items waits for your confirmation, and excluded libraries are left alone. Anime is not covered. Every linked profile sets it up on its own page. Finished watches are kept while a Simkl link is expired and sent once the account is linked again (up to 30 days). New Logs tab on the admin page: a diagnostic report (versions, a settings summary without tokens, the plugin's recent log lines, token-like strings masked) to copy into a bug report. Settings pages redesigned: the users' link first, then the profile, then Account / Scrobbling / Simkl sync / Logs tabs. Both pages are wider. Simkl reads are paced like writes, at least one second apart per user, so linking an account no longer trips Simkl's burst detector.",
+                "targetAbi": "10.11.7.0",
+                "sourceUrl": "https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/releases/download/V9.6.0.0/RK_Simkl_Scrobbler_9.6.0.0.zip",
+                "checksum": "13cd7c9459ff65dcbc30399e64c4b390",
+                "timestamp": "2026-09-06T19:56:40Z"
+            },
+            {
+                "version": "9.5.0.0",
+                "changelog": "The plugin is now called \"RK Simkl Scrobbler\" (RK for romskidd), at Simkl's request, to avoid any confusion with Simkl's own apps and the official Jellyfin plugin. It is an unofficial plugin, not affiliated with or endorsed by Simkl or Jellyfin. The plugin id is unchanged: nothing to do, updates continue as before. Rewatches are now handled by Simkl directly on the scrobble stop (Pro/VIP): the plugin no longer asks Simkl whether an item was watched before playback and no longer writes a separate history entry. Two requests less per episode, same safeguards (opt-in, paid plan, at least half of the item played this session). Following Simkl's API review: account settings and watch statistics are only re-read when Simkl's activity feed reports a change, and the PIN status is polled at the interval Simkl asks for. The plugin identifies itself to Simkl as rk-simkl-scrobbler.",
+                "targetAbi": "10.11.7.0",
+                "sourceUrl": "https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/releases/download/V9.5.0.0/RK_Simkl_Scrobbler_9.5.0.0.zip",
+                "checksum": "47ca511d99a8b12e0a8943d07514e7a7",
+                "timestamp": "2026-09-03T16:39:52Z"
+            },
+            {
+                "version": "9.4.0.0",
+                "changelog": "Rewatches (Simkl Pro / VIP): finishing something you had already watched is now recorded as a separate Simkl rewatch session, and later episodes of the same show join that session. Off by default; only fires when Jellyfin or Simkl already listed the item as watched and at least half of it played in this session. Not offered on free plans, where Simkl does not track rewatches. The plugin now runs as its own Simkl application. Simkl tokens are bound to the application that issued them, so after this update every user has to link their Simkl account again, once (the plugin shows \"Link expired\"). Links Simkl no longer accepts are detected at startup and on the settings pages instead of looking connected while nothing scrobbles. \"Open on Simkl\" link next to the last scrobble, and the last rewatch shown, on both the admin page and the self-service page. Requests are paced to Simkl's one-write-per-second limit per user. Security pass: admin endpoints require an administrator, tokens never reach the logs or the browser console, redirect and code parameters are escaped. Entering the PIN now lands on a confirmation page instead of the Simkl home. The server log explains every rewatch decision at Information level.",
+                "targetAbi": "10.11.7.0",
+                "sourceUrl": "https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/releases/download/V9.4.0.0/Simkl_Scrobbler_9.4.0.0.zip",
+                "checksum": "dc13165605548971025f088afa422da2",
+                "timestamp": "2026-09-02T19:30:03Z"
+            },
+            {
+                "version": "9.3.0.0",
+                "changelog": "Self-service linking: any Jellyfin user can now connect their own Simkl account from a page of their own, without dashboard access (the admin settings page shows the link to share; the optional Plugin Pages plugin also adds it to the user sidebar, but is never required). Watches that Simkl doesn't confirm are queued and replayed for up to 24 hours, surviving a server restart, so a network blip no longer loses an episode. Per-user library exclusions. An expired Simkl login is now reported instead of failing silently. The plugin appears in the dashboard sidebar and the settings page was redesigned.",
+                "targetAbi": "10.11.7.0",
+                "sourceUrl": "https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/releases/download/V9.3.0.0/Simkl_Scrobbler_9.3.0.0.zip",
+                "checksum": "8a0c41fc7ed412319f16209e87ad5a9d",
+                "timestamp": "2026-08-31T20:30:00Z"
+            },
+            {
+                "version": "9.2.0.2",
+                "changelog": "Manual check marks now sync to Simkl: ticking an episode, a season or a movie as played adds it to your history (batched per season), and optionally unticking removes it (off by default). The settings page shows your Simkl watch statistics, account type and the last scrobble result, and the profile selector now opens on the logged-in user. Every API request now identifies the app to Simkl (app-name/app-version), as required since April 2026. Replaces the broken 9.2.0.0.",
+                "targetAbi": "10.11.7.0",
+                "sourceUrl": "https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/releases/download/V9.2.0.2/Simkl_Scrobbler_9.2.0.2.zip",
+                "checksum": "0b56acf551561fc24f63db9239f81e50",
+                "timestamp": "2026-08-31T16:30:00Z"
+            },
+            {
+                "version": "9.1.0.0",
+                "changelog": "New independent plugin identity (own plugin id, updates only through this repository). Includes the 9.0.0.4 fix: the series' own IMDB/TMDB/TVDB ids are sent when scrobbling an episode, so shows whose episodes carry their own IMDB ids (e.g. Euphoria US) are tracked correctly without the filename fallback.",
+                "targetAbi": "10.11.7.0",
+                "sourceUrl": "https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/releases/download/V9.1.0.0/Simkl_Scrobbler_9.1.0.0.zip",
+                "checksum": "59c06b7120e3757fc8a31427132fc5fc",
+                "timestamp": "2026-08-30T21:10:00Z"
+            }
+        ]
+    },
+    {
+        "guid": "07caef58-a94b-4211-a62c-f9774e04ebdb",
+        "name": "Simkl (moved to RK Simkl Scrobbler)",
+        "description": "THIS PLUGIN HAS MOVED: install 'RK Simkl Scrobbler' from the same repository to keep receiving updates, then uninstall this one. Your Simkl login and settings are kept. Scrobbling keeps working in the meantime.",
+        "overview": "This plugin has moved to RK Simkl Scrobbler",
+        "owner": "romskidd",
+        "category": "General",
+        "imageUrl": "",
+        "versions": [
+            {
+                "version": "9.0.0.5",
+                "changelog": "FINAL release under this plugin id — the plugin continues as 'RK Simkl Scrobbler' (new plugin id) in this same repository. After updating, install 'Simkl Scrobbler' from the catalog, then uninstall this one; your Simkl login and settings are kept. This release still scrobbles normally (9.0.0.4 series-ids fix included) and goes dormant automatically once Simkl Scrobbler is installed.",
+                "targetAbi": "10.11.7.0",
+                "sourceUrl": "https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/releases/download/V9.0.0.5/Simkl_9.0.0.5.zip",
+                "checksum": "ab03cdcd14ff45a53803288a5b6e8feb",
+                "timestamp": "2026-08-31T09:00:00Z"
+            }
+        ]
+    }
+]

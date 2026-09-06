@@ -1,7 +1,7 @@
 ---
 name: "RK Simkl Scrobbler"
 guid: "03A7C840-6154-471F-8BE3-856CDC26D500"
-version: "9.5.0.15"
+version: "9.6.0.0"
 targetAbi: "10.11.7.0"
 framework: "net9.0"
 owner: "romskidd"
@@ -14,17 +14,23 @@ category: "General"
 artifacts:
   - "Jellyfin.Plugin.Simkl.dll"
 changelog: |-
-  - The plugin is now called "RK Simkl Scrobbler" (RK for romskidd), at Simkl's
-    request, to avoid any confusion with Simkl's own apps and the official
-    Jellyfin plugin. It is an unofficial plugin, not affiliated with or endorsed
-    by Simkl or Jellyfin. The plugin id is unchanged: nothing to do, updates
-    continue as before.
-  - Rewatches are now handled by Simkl directly on the scrobble stop (Pro/VIP):
-    the plugin no longer asks Simkl whether an item was watched before playback
-    and no longer writes a separate history entry. Two requests less per
-    episode, same safeguards (opt-in, paid plan, at least half of the item
-    played this session).
-  - Following Simkl's API review: account settings and watch statistics are
-    only re-read when Simkl's activity feed reports a change, and the PIN
-    status is polled at the interval Simkl asks for.
-  - The plugin identifies itself to Simkl as rk-simkl-scrobbler.
+  - Beta 1 of the Simkl sync (experimental, off by default). A new "Simkl sync"
+    tab sets it up in three steps. 1. Simkl to Jellyfin: marks as played, in
+    Jellyfin, the episodes and movies your Simkl history lists (watch date and
+    play count included; only items present in your libraries, unmatched ones
+    are retried after each library scan). 2. Jellyfin to Simkl: sends to Simkl
+    what Jellyfin has as played and Simkl does not have yet. 3. Keep in sync:
+    follows the Simkl history after each playback and library scan, at most once
+    an hour. Each step shows a preview before anything is written, both
+    directions can be undone for 7 days, a pass that would change more than 200
+    items waits for your confirmation, and excluded libraries are left alone.
+    Anime is not covered. Every linked profile sets it up on its own page.
+  - Finished watches are kept while a Simkl link is expired and sent once the
+    account is linked again (up to 30 days).
+  - New Logs tab on the admin page: a diagnostic report (versions, a settings
+    summary without tokens, the plugin's recent log lines, token-like strings
+    masked) to copy into a bug report.
+  - Settings pages redesigned: the users' link first, then the profile, then
+    Account / Scrobbling / Simkl sync / Logs tabs. Both pages are wider.
+  - Simkl reads are paced like writes, at least one second apart per user, so
+    linking an account no longer trips Simkl's burst detector.
