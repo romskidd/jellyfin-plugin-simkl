@@ -203,5 +203,18 @@ namespace Jellyfin.Plugin.Simkl.Configuration
         /// Gets or sets user id.
         /// </summary>
         public Guid Id { get; set; }
+
+        /// <summary>
+        /// Forgets what was cached about the linked Simkl account, so it is read
+        /// again with the current token. Called when a profile gets a new token.
+        /// </summary>
+        public void ForgetCachedAccount()
+        {
+            SimklUserName = null;
+            SimklAccountId = null;
+            AccountType = null;
+            AccountTypeCheckedUtc = null;
+            SettingsStamp = null;
+        }
     }
 }

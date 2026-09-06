@@ -39,6 +39,29 @@ namespace Jellyfin.Plugin.Simkl
         public override string Description => "Scrobble your watched Movies, TV Shows and Anime to Simkl and share your progress with friends!";
 
         /// <inheritdoc />
+        public override void UpdateConfiguration(BasePluginConfiguration configuration)
+        {
+            // The admin page links an account by saving the whole configuration
+            // with the new token in it. What was cached about the previous
+            // account must not survive that.
+            if (configuration is PluginConfiguration incoming)
+            {
+                foreach (var next in incoming.UserConfigs)
+                {
+                    var current = Configuration.GetByGuid(next.Id);
+                    if (current != null
+                        && !string.IsNullOrEmpty(next.UserToken)
+                        && !string.Equals(current.UserToken, next.UserToken, StringComparison.Ordinal))
+                    {
+                        next.ForgetCachedAccount();
+                    }
+                }
+            }
+
+            base.UpdateConfiguration(configuration);
+        }
+
+        /// <inheritdoc />
         public IEnumerable<PluginPageInfo> GetPages()
         {
             yield return new PluginPageInfo

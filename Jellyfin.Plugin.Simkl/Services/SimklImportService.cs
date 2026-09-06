@@ -270,6 +270,11 @@ namespace Jellyfin.Plugin.Simkl.Services
         public ImportStatus GetStatus(Guid userId)
         {
             var config = SimklPlugin.Instance?.Configuration.GetByGuid(userId);
+            if (config != null)
+            {
+                ResetIfAccountChanged(userId, config);
+            }
+
             var status = new ImportStatus
             {
                 Enabled = config?.ImportFromSimkl ?? false,
@@ -377,6 +382,7 @@ namespace Jellyfin.Plugin.Simkl.Services
                 return report;
             }
 
+            await EnsureAccountAsync(userId, config).ConfigureAwait(false);
             if (mode == ImportMode.Delta && !config.ImportInitialDone)
             {
                 report.Message = "Run step 1 (Simkl to Jellyfin) first.";
@@ -974,6 +980,8 @@ namespace Jellyfin.Plugin.Simkl.Services
                 return report;
             }
 
+            await EnsureAccountAsync(userId, config).ConfigureAwait(false);
+
             ExportRun? run;
             lock (_stateLock)
             {
@@ -1055,6 +1063,8 @@ namespace Jellyfin.Plugin.Simkl.Services
                 report.Message = "This profile is not linked to Simkl.";
                 return report;
             }
+
+            await EnsureAccountAsync(userId, config).ConfigureAwait(false);
 
             var gate = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
             if (!await gate.WaitAsync(30000).ConfigureAwait(false))
@@ -1525,6 +1535,74 @@ namespace Jellyfin.Plugin.Simkl.Services
             return Path.Combine(_applicationPaths.PluginConfigurationsPath, "Jellyfin.Plugin.Simkl.import.json");
         }
 
+        /// <summary>
+        /// Makes sure the Simkl account id is known for the profile, then forgets
+        /// the sync state if the profile is now linked to another account.
+        /// </summary>
+        private async Task EnsureAccountAsync(Guid userId, UserConfig config)
+        {
+            if (config.SimklAccountId == null && !string.IsNullOrEmpty(config.UserToken))
+            {
+                try
+                {
+                    await _simklApi.GetUserSettings(config.UserToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Could not read the Simkl account of {UserId} before a sync pass", userId);
+                }
+            }
+
+            ResetIfAccountChanged(userId, config);
+        }
+
+        /// <summary>
+        /// The sync state (what was imported, exported, the delta stamps and the
+        /// step flags) belongs to one Simkl account. When the profile is linked
+        /// to another account, it starts over from step 1; what was marked in
+        /// Jellyfin stays as it is.
+        /// </summary>
+        private void ResetIfAccountChanged(Guid userId, UserConfig config)
+        {
+            var accountId = config.SimklAccountId;
+            if (accountId == null)
+            {
+                return;
+            }
+
+            lock (_stateLock)
+            {
+                var all = LoadState();
+                var state = all.For(userId);
+                if (state.AccountId == null)
+                {
+                    // First time the account is seen: adopt it as the anchor.
+                    state.AccountId = accountId;
+                    SaveState();
+                    return;
+                }
+
+                if (state.AccountId == accountId)
+                {
+                    return;
+                }
+
+                all.Users[userId.ToString("N")] = new UserImportState { AccountId = accountId };
+                SaveState();
+            }
+
+            config.ImportInitialDone = false;
+            config.ExportInitialDone = false;
+            config.ImportFromSimkl = false;
+            config.ImportShowsStamp = null;
+            config.ImportMoviesStamp = null;
+            config.ImportLastCheckUtc = null;
+            config.ExportLastReport = null;
+            config.ImportLastReport = "This profile is now linked to another Simkl account: the sync starts over from step 1.";
+            SimklPlugin.Instance?.SaveConfiguration();
+            _logger.LogWarning("Profile {UserId} is linked to another Simkl account; its Simkl sync state was reset", userId);
+        }
+
         private ImportState LoadState()
         {
             if (_state != null)
@@ -1658,6 +1736,9 @@ namespace Jellyfin.Plugin.Simkl.Services
 
         private sealed class UserImportState
         {
+            [JsonPropertyName("accountId")]
+            public int? AccountId { get; set; }
+
             [JsonPropertyName("imported")]
             public HashSet<Guid> Imported { get; set; } = new HashSet<Guid>();
 

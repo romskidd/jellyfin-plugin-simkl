@@ -247,6 +247,11 @@ namespace Jellyfin.Plugin.Simkl.API
             }
 
             var linked = plugin.Configuration.GetOrCreate(userId.Value);
+            if (!string.Equals(linked.UserToken, status.AccessToken, StringComparison.Ordinal))
+            {
+                linked.ForgetCachedAccount();
+            }
+
             linked.UserToken = status.AccessToken;
             linked.LinkExpired = false;
             plugin.SaveConfiguration();
