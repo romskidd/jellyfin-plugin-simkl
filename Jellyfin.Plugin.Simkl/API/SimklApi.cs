@@ -868,6 +868,9 @@ namespace Jellyfin.Plugin.Simkl.API
                         snapshot.AllStamp = all.GetString();
                     }
 
+                    snapshot.ShowsStamp = ReadNestedStamp(rootElement, "tv_shows");
+                    snapshot.MoviesStamp = ReadNestedStamp(rootElement, "movies");
+
                     if (rootElement.TryGetProperty("settings", out var settings)
                         && settings.ValueKind == JsonValueKind.Object
                         && settings.TryGetProperty("all", out var settingsAll)
@@ -890,6 +893,76 @@ namespace Jellyfin.Plugin.Simkl.API
                 _logger.LogDebug(ex, "Could not read the Simkl activity");
                 return snapshot;
             }
+        }
+
+        /// <summary>
+        /// Reads the activity stamps that drive the history import.
+        /// </summary>
+        /// <param name="userToken">User token.</param>
+        /// <param name="fresh">True to ask Simkl again even if a reading is only minutes old.</param>
+        /// <returns>The stamps.</returns>
+        public async Task<ImportActivity> GetImportActivityAsync(string userToken, bool fresh)
+        {
+            if (fresh)
+            {
+                _activityCache.TryRemove(userToken, out _);
+            }
+
+            var snapshot = await GetActivityAsync(userToken).ConfigureAwait(false);
+            return new ImportActivity
+            {
+                Unauthorized = snapshot.Unauthorized,
+                ShowsStamp = snapshot.ShowsStamp,
+                MoviesStamp = snapshot.MoviesStamp,
+            };
+        }
+
+        /// <summary>
+        /// Reads the user's Simkl list for a type ("shows" or "movies"), whole
+        /// or only what changed since a stamp, with per-episode watch dates.
+        /// </summary>
+        /// <param name="userToken">User token.</param>
+        /// <param name="type">"shows" or "movies".</param>
+        /// <param name="dateFrom">An activity stamp to read changes since, or null for everything.</param>
+        /// <returns>The raw JSON body, or null when the request failed.</returns>
+        public async Task<string?> GetAllItemsRawAsync(string userToken, string type, string? dateFrom)
+        {
+            var url = "/sync/all-items/" + type + "?extended=full&episode_watched_at=yes";
+            if (!string.IsNullOrEmpty(dateFrom))
+            {
+                url += "&date_from=" + Uri.EscapeDataString(dateFrom);
+            }
+
+            using var options = GetOptions(userToken);
+            options.RequestUri = BuildUri(url);
+            options.Method = HttpMethod.Get;
+            var response = await SendThrottledAsync(options, userToken).ConfigureAwait(false);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                DropToken(userToken);
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogDebug("GET /sync/all-items/{Type} returned {Status}", type, response.StatusCode);
+                return null;
+            }
+
+            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            // Simkl answers an empty body when nothing changed since the stamp.
+            return string.IsNullOrWhiteSpace(body) ? "{}" : body;
+        }
+
+        private static string? ReadNestedStamp(JsonElement root, string section)
+        {
+            return root.TryGetProperty(section, out var element)
+                   && element.ValueKind == JsonValueKind.Object
+                   && element.TryGetProperty("all", out var all)
+                   && all.ValueKind == JsonValueKind.String
+                ? all.GetString()
+                : null;
         }
 
         private void DropToken(string userToken)
@@ -964,6 +1037,10 @@ namespace Jellyfin.Plugin.Simkl.API
             public string? AllStamp { get; set; }
 
             public string? SettingsStamp { get; set; }
+
+            public string? ShowsStamp { get; set; }
+
+            public string? MoviesStamp { get; set; }
 
             public DateTime CheckedUtc { get; set; }
         }

@@ -132,6 +132,44 @@ namespace Jellyfin.Plugin.Simkl.Configuration
         public string? SettingsStamp { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the Simkl watch history is
+        /// brought into Jellyfin's played state (experimental).
+        /// </summary>
+        public bool ImportFromSimkl { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether items that disappear from
+        /// the Simkl history are unmarked in Jellyfin. Only items the import
+        /// itself marked are ever touched.
+        /// </summary>
+        public bool ImportUnwatch { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the confirmed initial import ran.
+        /// </summary>
+        public bool ImportInitialDone { get; set; }
+
+        /// <summary>
+        /// Gets or sets the tv_shows activity stamp the last import pass used.
+        /// </summary>
+        public string? ImportShowsStamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets the movies activity stamp the last import pass used.
+        /// </summary>
+        public string? ImportMoviesStamp { get; set; }
+
+        /// <summary>
+        /// Gets or sets when Simkl's activity was last checked for the import.
+        /// </summary>
+        public DateTime? ImportLastCheckUtc { get; set; }
+
+        /// <summary>
+        /// Gets or sets the summary of the last import pass.
+        /// </summary>
+        public string? ImportLastReport { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether finishing something already
         /// watched is recorded as a Simkl rewatch session. Simkl only honours
         /// this for Pro and VIP accounts.

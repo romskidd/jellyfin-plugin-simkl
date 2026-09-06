@@ -341,6 +341,42 @@
                     </div>
 
                     <div class="simklCard">
+                        <div class="simklCardTitle">Import from Simkl <span class="simklMuted" style="font-weight:normal;">(experimental)</span></div>
+                        <div class="simklOption">
+                            <div class="checkboxcontainer"><label>
+                                <input is="emby-checkbox" type="checkbox" id="ImportFromSimkl"/>
+                                <span>Bring this profile's Simkl watch history into Jellyfin</span>
+                            </label></div>
+                            <div class="fieldDescription">
+                                Episodes and movies watched on Simkl are marked played in Jellyfin, matched by
+                                IMDb/TMDb/TVDB ids (anime is left out for now). Tick, <strong>Save</strong>, then
+                                <strong>Preview</strong> to see what would change, then <strong>Apply initial import</strong>.
+                                Later passes run after a playback or a library scan, at most once an hour, and stop
+                                at 200 changes until you confirm. Every pass can be undone for 7 days.
+                            </div>
+                        </div>
+                        <div class="simklOption">
+                            <div class="checkboxcontainer"><label>
+                                <input is="emby-checkbox" type="checkbox" id="ImportUnwatch"/>
+                                <span>Also unmark items that disappear from the Simkl history</span>
+                            </label></div>
+                            <div class="fieldDescription">
+                                Only touches items this import marked itself, and only on a full pass (Preview then
+                                Apply), never on the hourly delta. Off by default.
+                            </div>
+                        </div>
+                        <div class="simklMuted" id="importStatus" style="margin-top:0.4rem;"></div>
+                        <div class="simklActions" style="margin-top:0.6rem;flex-wrap:wrap;">
+                            <button is="emby-button" type="button" class="raised" onclick="SimklConfig.importAction('preview');"><span>Preview</span></button>
+                            <button is="emby-button" type="button" class="raised" id="importApplyBtn" onclick="SimklConfig.importAction('apply');"><span>Apply initial import</span></button>
+                            <button is="emby-button" type="button" class="raised" id="importSyncBtn" hidden onclick="SimklConfig.importAction('sync');"><span>Sync now</span></button>
+                            <button is="emby-button" type="button" class="raised" id="importConfirmBtn" hidden onclick="SimklConfig.importAction('confirm');"><span>Apply remaining changes</span></button>
+                            <button is="emby-button" type="button" class="raised" id="importUndoBtn" hidden onclick="SimklConfig.importAction('undo');"><span>Undo last pass</span></button>
+                        </div>
+                        <pre class="simklMuted" id="importResult" hidden style="white-space:pre-wrap;max-height:16rem;overflow:auto;margin-top:0.6rem;font-family:inherit;"></pre>
+                    </div>
+
+                    <div class="simklCard">
                         <div class="simklCardTitle">Manual check marks</div>
                         <div class="simklOption">
                             <div class="checkboxcontainer"><label>
@@ -479,6 +515,67 @@
                 } else {
                     Dashboard.alert('Copy the selected link with Ctrl+C');
                 }
+            },
+            renderImportStatus: function (userId) {
+                const box = document.querySelector('#importStatus');
+                box.textContent = 'Loading import status...';
+                return SimklAPI.importCall(userId, 'status', 'GET').then(function (st) {
+                    const g = function (k) { return st ? (st[k] !== undefined ? st[k] : st[k.charAt(0).toLowerCase() + k.slice(1)]) : undefined; };
+                    const parts = [];
+                    parts.push(g('Enabled') ? 'Import enabled.' : 'Import disabled (tick the box and Save to enable).');
+                    parts.push(g('InitialDone') ? 'Initial import done.' : 'Initial import not run yet.');
+                    if (g('LastCheckUtc')) { parts.push('Last check: ' + String(g('LastCheckUtc')).replace('T', ' ').slice(0, 16) + ' UTC.'); }
+                    if (g('UnmatchedCount') > 0) { parts.push(g('UnmatchedCount') + ' Simkl item(s) not in the library yet (retried after each scan).'); }
+                    if (g('LastReport')) { parts.push('Last pass: ' + g('LastReport')); }
+                    if (g('PendingConfirmation') > 0) { parts.push(g('PendingConfirmation') + ' change(s) are waiting for your confirmation.'); }
+                    box.textContent = parts.join(' ');
+                    document.querySelector('#importApplyBtn').hidden = !!g('InitialDone');
+                    document.querySelector('#importSyncBtn').hidden = !g('InitialDone');
+                    document.querySelector('#importConfirmBtn').hidden = !(g('PendingConfirmation') > 0);
+                    const undo = document.querySelector('#importUndoBtn');
+                    undo.hidden = !g('CanUndo');
+                    if (g('CanUndo')) {
+                        undo.querySelector('span').textContent = 'Undo last pass (' + g('UndoCount') + ' item(s))';
+                    }
+                }).catch(function (err) {
+                    console.log("Couldn't load the import status", err);
+                    box.textContent = '';
+                });
+            },
+            importAction: function (kind) {
+                const userId = SimklConfig.userSelector.value;
+                const result = document.querySelector('#importResult');
+                const questions = {
+                    apply: 'Apply the initial import now? Everything watched on Simkl and present in the library will be marked played for this profile. You can undo it for 7 days.',
+                    confirm: 'Apply all the waiting changes?',
+                    undo: 'Undo the last import pass for this profile?'
+                };
+                if (questions[kind] && !window.confirm(questions[kind])) {
+                    return;
+                }
+                const action = kind === 'confirm' ? 'sync?all=true' : kind;
+                result.hidden = false;
+                result.textContent = 'Working... this can take a minute on a large history.';
+                SimklAPI.importCall(userId, action, 'POST').then(function (r) {
+                    const g = function (k) { return r ? (r[k] !== undefined ? r[k] : r[k.charAt(0).toLowerCase() + k.slice(1)]) : undefined; };
+                    const lines = [g('Message') || ''];
+                    if (kind !== 'undo') {
+                        lines.push('Episodes to mark: ' + (g('MarkedEpisodes') || 0) + ' | Movies to mark: ' + (g('MarkedMovies') || 0)
+                            + ' | To unmark: ' + (g('Unmarked') || 0) + ' | Already played: ' + (g('AlreadyPlayed') || 0)
+                            + ' | Not in library: ' + ((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0)) + ' item(s) in ' + (g('UnmatchedShows') || 0) + ' unknown show(s)');
+                        const list = g('Lines') || [];
+                        if (list.length) {
+                            lines.push('');
+                            lines.push(list.join('\n'));
+                            if (g('TotalChanges') > list.length) { lines.push('... and ' + (g('TotalChanges') - list.length) + ' more'); }
+                        }
+                    }
+                    result.textContent = lines.join('\n');
+                    SimklConfig.renderImportStatus(userId);
+                }).catch(function (err) {
+                    console.error(err);
+                    result.textContent = 'The request failed, see the browser console and the server log.';
+                });
             },
             renderLastActivity: function (userConfig) {
                 const box = document.querySelector('#lastScrobble');
@@ -622,6 +719,7 @@
                 });
 
                 SimklConfig.renderLibraries(userConfig.ExcludedLibraries);
+                SimklConfig.renderImportStatus(userConfig.Id);
 
                 for (const key in userConfig) {
                     const chk = document.querySelector("#configOptionsContainer input[type=checkbox]#" + key);
@@ -881,6 +979,16 @@
                         console.log("Couldn't load libraries", result);
                         return null;
                     });
+            },
+            importCall: function (secret, action, method) {
+                const request = {
+                    url: window.ApiClient.getUrl('Simkl/users/import/' + secret + '/' + action),
+                    type: method,
+                    headers: {
+                        accept: 'application/json'
+                    }
+                };
+                return window.ApiClient.fetch(request);
             },
             getPendingCount: function (secret) {
                 const request = {

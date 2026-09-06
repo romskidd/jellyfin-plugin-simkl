@@ -31,6 +31,7 @@ namespace Jellyfin.Plugin.Simkl.API
         private readonly IAuthorizationContext _authContext;
         private readonly LibraryFilter _libraryFilter;
         private readonly ScrobbleRetryQueue _retryQueue;
+        private readonly SimklImportService _importService;
         private readonly ILogger<SelfServiceEndpoints> _logger;
 
         /// <summary>
@@ -40,18 +41,21 @@ namespace Jellyfin.Plugin.Simkl.API
         /// <param name="authContext">Instance of the <see cref="IAuthorizationContext"/> interface.</param>
         /// <param name="libraryFilter">Instance of the <see cref="LibraryFilter"/>.</param>
         /// <param name="retryQueue">Instance of the <see cref="ScrobbleRetryQueue"/>.</param>
+        /// <param name="importService">Instance of the <see cref="SimklImportService"/>.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{SelfServiceEndpoints}"/> interface.</param>
         public SelfServiceEndpoints(
             SimklApi simklApi,
             IAuthorizationContext authContext,
             LibraryFilter libraryFilter,
             ScrobbleRetryQueue retryQueue,
+            SimklImportService importService,
             ILogger<SelfServiceEndpoints> logger)
         {
             _simklApi = simklApi;
             _authContext = authContext;
             _libraryFilter = libraryFilter;
             _retryQueue = retryQueue;
+            _importService = importService;
             _logger = logger;
         }
 
@@ -158,6 +162,8 @@ namespace Jellyfin.Plugin.Simkl.API
                     SyncMarkPlayed = config?.SyncMarkPlayed ?? true,
                     SyncMarkUnplayed = config?.SyncMarkUnplayed ?? false,
                     EnableRewatches = config?.EnableRewatches ?? false,
+                    ImportFromSimkl = config?.ImportFromSimkl ?? false,
+                    ImportUnwatch = config?.ImportUnwatch ?? false,
                     MinLength = config?.MinLength ?? 5,
                     ExcludedLibraries = config?.ExcludedLibraries ?? Array.Empty<string>()
                 }
@@ -250,6 +256,62 @@ namespace Jellyfin.Plugin.Simkl.API
         }
 
         /// <summary>
+        /// Gets the Simkl import state of the calling user.
+        /// </summary>
+        /// <returns>The status.</returns>
+        [HttpGet("Me/Import/Status")]
+        public async Task<ActionResult<ImportStatus>> GetImportStatus()
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(_importService.GetStatus(userId.Value));
+        }
+
+        /// <summary>
+        /// Reads the whole Simkl history and reports what an import would change, without touching anything.
+        /// </summary>
+        /// <returns>The report.</returns>
+        [HttpPost("Me/Import/Preview")]
+        public async Task<ActionResult<ImportReport>> PreviewImport()
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(await _importService.PreviewAsync(userId.Value).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Runs the confirmed initial import.
+        /// </summary>
+        /// <returns>The report.</returns>
+        [HttpPost("Me/Import/Apply")]
+        public async Task<ActionResult<ImportReport>> ApplyImport()
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(await _importService.ApplyInitialAsync(userId.Value).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Applies what changed on Simkl since the last pass.
+        /// </summary>
+        /// <param name="all">True to apply beyond the cap, after the user confirmed.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("Me/Import/Sync")]
+        public async Task<ActionResult<ImportReport>> SyncImport([FromQuery] bool all = false)
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(await _importService.SyncAsync(userId.Value, manual: true, applyAll: all).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Reverts the last import pass.
+        /// </summary>
+        /// <returns>The report.</returns>
+        [HttpPost("Me/Import/Undo")]
+        public async Task<ActionResult<ImportReport>> UndoImport()
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(_importService.UndoLast(userId.Value));
+        }
+
+        /// <summary>
         /// Unlinks the calling user's Simkl account.
         /// </summary>
         /// <returns>No content.</returns>
@@ -299,6 +361,8 @@ namespace Jellyfin.Plugin.Simkl.API
             config.SyncMarkPlayed = options.SyncMarkPlayed;
             config.SyncMarkUnplayed = options.SyncMarkUnplayed;
             config.EnableRewatches = options.EnableRewatches;
+            config.ImportFromSimkl = options.ImportFromSimkl;
+            config.ImportUnwatch = options.ImportUnwatch;
             config.MinLength = Math.Clamp(options.MinLength, 0, 600);
             config.ExcludedLibraries = options.ExcludedLibraries?.ToArray() ?? Array.Empty<string>();
             plugin.SaveConfiguration();

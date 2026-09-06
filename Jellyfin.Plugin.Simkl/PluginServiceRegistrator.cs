@@ -23,6 +23,8 @@ namespace Jellyfin.Plugin.Simkl
             serviceCollection.AddHostedService<UserDataSync>();
             serviceCollection.AddHostedService<PluginPagesRegistration>();
             serviceCollection.AddHostedService<LinkValidation>();
+            serviceCollection.AddSingleton<SimklImportService>();
+            serviceCollection.AddHostedService(sp => sp.GetRequiredService<SimklImportService>());
         }
     }
 }

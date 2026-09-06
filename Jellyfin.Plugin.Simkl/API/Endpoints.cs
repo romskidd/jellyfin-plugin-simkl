@@ -18,16 +18,80 @@ namespace Jellyfin.Plugin.Simkl.API
     {
         private readonly SimklApi _simklApi;
         private readonly ScrobbleRetryQueue _retryQueue;
+        private readonly SimklImportService _importService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Endpoints"/> class.
         /// </summary>
         /// <param name="simklApi">Instance of the <see cref="SimklApi"/>.</param>
         /// <param name="retryQueue">Instance of the <see cref="ScrobbleRetryQueue"/>.</param>
-        public Endpoints(SimklApi simklApi, ScrobbleRetryQueue retryQueue)
+        /// <param name="importService">Instance of the <see cref="SimklImportService"/>.</param>
+        public Endpoints(SimklApi simklApi, ScrobbleRetryQueue retryQueue, SimklImportService importService)
         {
             _simklApi = simklApi;
             _retryQueue = retryQueue;
+            _importService = importService;
+        }
+
+        /// <summary>
+        /// Gets the Simkl import state of a user.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The status.</returns>
+        [HttpGet("users/import/{userId}/status")]
+        [Authorize(Policy = "RequiresElevation")]
+        public ActionResult<ImportStatus> GetImportStatus([FromRoute] Guid userId)
+        {
+            return Ok(_importService.GetStatus(userId));
+        }
+
+        /// <summary>
+        /// Reads the whole Simkl history of a user and reports what an import would change.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("users/import/{userId}/preview")]
+        [Authorize(Policy = "RequiresElevation")]
+        public async Task<ActionResult<ImportReport>> PreviewImport([FromRoute] Guid userId)
+        {
+            return Ok(await _importService.PreviewAsync(userId).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Runs the confirmed initial import for a user.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("users/import/{userId}/apply")]
+        [Authorize(Policy = "RequiresElevation")]
+        public async Task<ActionResult<ImportReport>> ApplyImport([FromRoute] Guid userId)
+        {
+            return Ok(await _importService.ApplyInitialAsync(userId).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Applies what changed on Simkl since the last pass for a user.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <param name="all">True to apply beyond the cap, after confirmation.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("users/import/{userId}/sync")]
+        [Authorize(Policy = "RequiresElevation")]
+        public async Task<ActionResult<ImportReport>> SyncImport([FromRoute] Guid userId, [FromQuery] bool all = false)
+        {
+            return Ok(await _importService.SyncAsync(userId, manual: true, applyAll: all).ConfigureAwait(false));
+        }
+
+        /// <summary>
+        /// Reverts the last import pass of a user.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <returns>The report.</returns>
+        [HttpPost("users/import/{userId}/undo")]
+        [Authorize(Policy = "RequiresElevation")]
+        public ActionResult<ImportReport> UndoImport([FromRoute] Guid userId)
+        {
+            return Ok(_importService.UndoLast(userId));
         }
 
         /// <summary>

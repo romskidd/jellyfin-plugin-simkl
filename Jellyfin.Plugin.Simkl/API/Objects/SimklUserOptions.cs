@@ -46,6 +46,16 @@ namespace Jellyfin.Plugin.Simkl.API.Objects
         public bool EnableRewatches { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the Simkl history is imported into Jellyfin (experimental).
+        /// </summary>
+        public bool ImportFromSimkl { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether items gone from the Simkl history are unmarked.
+        /// </summary>
+        public bool ImportUnwatch { get; set; }
+
+        /// <summary>
         /// Gets or sets the minimum runtime, in minutes, below which nothing is scrobbled.
         /// </summary>
         public int MinLength { get; set; }
