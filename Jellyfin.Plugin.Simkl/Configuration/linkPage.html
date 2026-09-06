@@ -280,9 +280,9 @@
                 <div class="simkl-actions" style="flex-wrap:wrap;">
                     <button class="simkl-btn" type="button" id="simklImportPreview">Preview</button>
                     <button class="simkl-btn primary" type="button" id="simklImportApply">Apply initial import</button>
-                    <button class="simkl-btn" type="button" id="simklImportSync" hidden>Sync now</button>
-                    <button class="simkl-btn primary" type="button" id="simklImportConfirm" hidden>Apply remaining changes</button>
-                    <button class="simkl-btn" type="button" id="simklImportUndo" hidden>Undo last pass</button>
+                    <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Sync now</button>
+                    <button class="simkl-btn primary" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
+                    <button class="simkl-btn" type="button" id="simklImportUndo" style="display:none;">Undo last pass</button>
                 </div>
                 <pre class="simkl-muted" id="simklImportResult" hidden style="white-space:pre-wrap;max-height:16rem;overflow:auto;font-family:inherit;"></pre>
             </div>
@@ -440,11 +440,12 @@
                     if (pick(st, 'LastReport')) { parts.push('Last pass: ' + pick(st, 'LastReport')); }
                     if (pick(st, 'PendingConfirmation') > 0) { parts.push(pick(st, 'PendingConfirmation') + ' change(s) are waiting for your confirmation.'); }
                     box.textContent = parts.join(' ');
-                    el('simklImportApply').hidden = false;
+                    var show = function (id, on) { el(id).style.display = on ? '' : 'none'; };
+                    show('simklImportApply', true);
                     el('simklImportApply').textContent = pick(st, 'InitialDone') ? 'Run a full pass' : 'Apply initial import';
-                    el('simklImportSync').hidden = !pick(st, 'InitialDone');
-                    el('simklImportConfirm').hidden = !(pick(st, 'PendingConfirmation') > 0);
-                    el('simklImportUndo').hidden = !pick(st, 'CanUndo');
+                    show('simklImportSync', !!pick(st, 'InitialDone'));
+                    show('simklImportConfirm', pick(st, 'PendingConfirmation') > 0);
+                    show('simklImportUndo', !!pick(st, 'CanUndo'));
                     if (pick(st, 'CanUndo')) {
                         el('simklImportUndo').textContent = 'Undo last pass (' + pick(st, 'UndoCount') + ' item(s))';
                     }

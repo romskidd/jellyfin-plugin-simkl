@@ -369,9 +369,9 @@
                         <div class="simklActions" style="margin-top:0.6rem;flex-wrap:wrap;">
                             <button is="emby-button" type="button" class="raised" onclick="SimklConfig.importAction('preview');"><span>Preview</span></button>
                             <button is="emby-button" type="button" class="raised" id="importApplyBtn" onclick="SimklConfig.importAction('apply');"><span>Apply initial import</span></button>
-                            <button is="emby-button" type="button" class="raised" id="importSyncBtn" hidden onclick="SimklConfig.importAction('sync');"><span>Sync now</span></button>
-                            <button is="emby-button" type="button" class="raised" id="importConfirmBtn" hidden onclick="SimklConfig.importAction('confirm');"><span>Apply remaining changes</span></button>
-                            <button is="emby-button" type="button" class="raised" id="importUndoBtn" hidden onclick="SimklConfig.importAction('undo');"><span>Undo last pass</span></button>
+                            <button is="emby-button" type="button" class="raised" id="importSyncBtn" style="display:none;" onclick="SimklConfig.importAction('sync');"><span>Sync now</span></button>
+                            <button is="emby-button" type="button" class="raised" id="importConfirmBtn" style="display:none;" onclick="SimklConfig.importAction('confirm');"><span>Apply remaining changes</span></button>
+                            <button is="emby-button" type="button" class="raised" id="importUndoBtn" style="display:none;" onclick="SimklConfig.importAction('undo');"><span>Undo last pass</span></button>
                         </div>
                         <pre class="simklMuted" id="importResult" hidden style="white-space:pre-wrap;max-height:16rem;overflow:auto;margin-top:0.6rem;font-family:inherit;"></pre>
                     </div>
@@ -529,13 +529,15 @@
                     if (g('LastReport')) { parts.push('Last pass: ' + g('LastReport')); }
                     if (g('PendingConfirmation') > 0) { parts.push(g('PendingConfirmation') + ' change(s) are waiting for your confirmation.'); }
                     box.textContent = parts.join(' ');
+                    // emby-button styling wins over the hidden attribute: toggle display.
+                    const show = function (id, on) { document.querySelector(id).style.display = on ? '' : 'none'; };
                     const applyBtn = document.querySelector('#importApplyBtn');
-                    applyBtn.hidden = false;
+                    show('#importApplyBtn', true);
                     applyBtn.querySelector('span').textContent = g('InitialDone') ? 'Run a full pass' : 'Apply initial import';
-                    document.querySelector('#importSyncBtn').hidden = !g('InitialDone');
-                    document.querySelector('#importConfirmBtn').hidden = !(g('PendingConfirmation') > 0);
+                    show('#importSyncBtn', !!g('InitialDone'));
+                    show('#importConfirmBtn', g('PendingConfirmation') > 0);
                     const undo = document.querySelector('#importUndoBtn');
-                    undo.hidden = !g('CanUndo');
+                    show('#importUndoBtn', !!g('CanUndo'));
                     if (g('CanUndo')) {
                         undo.querySelector('span').textContent = 'Undo last pass (' + g('UndoCount') + ' item(s))';
                     }
