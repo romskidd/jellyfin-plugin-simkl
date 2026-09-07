@@ -59,6 +59,14 @@ namespace Jellyfin.Plugin.Simkl
                     next.LastScrobbleUrl = current.LastScrobbleUrl;
                     next.LastRewatch = current.LastRewatch;
                     next.ImportFromSimkl = current.ImportFromSimkl;
+                    if (current.ImportFromSimkl)
+                    {
+                        // While the sync is on, manual check marks must reach Simkl
+                        // both ways, whatever an old copy of the page says.
+                        next.SyncMarkPlayed = true;
+                        next.SyncMarkUnplayed = true;
+                    }
+
                     next.ImportInitialDone = current.ImportInitialDone;
                     next.ImportShowsStamp = current.ImportShowsStamp;
                     next.ImportMoviesStamp = current.ImportMoviesStamp;

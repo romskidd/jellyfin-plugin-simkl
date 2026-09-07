@@ -426,8 +426,8 @@ namespace Jellyfin.Plugin.Simkl.API
             config.EnablePlaybackScrobbling = options.EnablePlaybackScrobbling;
             config.ScrobbleMovies = options.ScrobbleMovies;
             config.ScrobbleShows = options.ScrobbleShows;
-            config.SyncMarkPlayed = options.SyncMarkPlayed;
-            config.SyncMarkUnplayed = options.SyncMarkUnplayed;
+            config.SyncMarkPlayed = options.SyncMarkPlayed || config.ImportFromSimkl;
+            config.SyncMarkUnplayed = options.SyncMarkUnplayed || config.ImportFromSimkl;
             config.EnableRewatches = options.EnableRewatches;
             config.ImportUnwatch = options.ImportUnwatch;
             config.MinLength = Math.Clamp(options.MinLength, 0, 600);
