@@ -543,7 +543,7 @@
                                 <div class="simklMuted" id="step1Status">Loading...</div>
                                 <div class="checkboxcontainer" style="margin-top:0.4rem;"><label>
                                     <input is="emby-checkbox" type="checkbox" id="ImportUnwatch"/>
-                                    <span>On a full run, also unmark items gone from the Simkl history (only items step 1 marked)</span>
+                                    <span>Also untick here what was removed from the Simkl history (only items step 1 ticked; checked on Import / Run a full pass)</span>
                                 </label></div>
                                 <div class="simklMuted" id="step1Gate">Run a preview first: Import unlocks once you have seen what would change.</div>
                                 <div class="simklStepActions">
@@ -572,15 +572,12 @@
                             <span class="simklStepNum" id="step3Num">3</span>
                             <div class="simklGrow">
                                 <div><strong>Keep in sync</strong></div>
-                                <div class="checkboxcontainer" style="margin-top:0.3rem;"><label>
-                                    <input is="emby-checkbox" type="checkbox" id="ImportFromSimkl" onchange="SimklConfig.applyManualLock();"/>
-                                    <span>Keep Jellyfin in sync with the Simkl history</span>
-                                </label></div>
-                                <div class="simklMuted">While this is on, manual check marks in Jellyfin always reach Simkl in both directions, so an episode you untick here is not marked again by the next pass.</div>
-                                <div class="simklMuted" id="step3Hint">Available once steps 1 and 2 are done. Tick, then Save.</div>
+                                <div class="simklMuted">Once on, what you watch on Simkl is marked here after each playback or library scan (at most once an hour), and manual check marks here always reach Simkl in both directions, so an episode you untick is not marked again by the next pass. Takes effect right away, nothing to save.</div>
+                                <div class="simklMuted" id="step3Hint">Available once steps 1 and 2 are done.</div>
                                 <div id="syncActiveBox" class="simklSyncActive" style="display:none;"><span class="simklSyncDot"></span><span id="syncActiveText"></span></div>
                                 <div class="simklStepActions">
-                                    <button is="emby-button" type="button" class="raised" id="importSyncBtn" style="display:none;" onclick="SimklConfig.importAction('sync');"><span>Sync now</span></button>
+                                    <button is="emby-button" type="button" class="raised" id="step3ToggleBtn" disabled onclick="SimklConfig.importAction('keep');"><span>Turn on keep in sync</span></button>
+                                    <button is="emby-button" type="button" class="raised" id="importSyncBtn" style="display:none;" onclick="SimklConfig.importAction('sync');"><span>Check Simkl now</span></button>
                                     <button is="emby-button" type="button" class="raised" id="importConfirmBtn" style="display:none;" onclick="SimklConfig.importAction('confirm');"><span>Apply remaining changes</span></button>
                                 </div>
                             </div>
@@ -694,9 +691,10 @@
                 document.querySelector('#step1Gate').style.display = done.import ? 'none' : '';
                 document.querySelector('#step2Gate').style.display = done.export ? 'none' : '';
             },
+            syncActive: false,
             applyManualLock: function () {
                 // While step 3 is on, manual check marks always sync both ways.
-                const on = document.querySelector('#ImportFromSimkl').checked;
+                const on = !!SimklConfig.syncActive;
                 ['#SyncMarkPlayed', '#SyncMarkUnplayed'].forEach(function (id) {
                     const box = document.querySelector(id);
                     if (on) { box.checked = true; }
@@ -894,12 +892,14 @@
                     show('#step2UndoBtn', !!g(st, 'CanUndoExport'));
                     if (g(st, 'CanUndoExport')) { document.querySelector('#step2UndoBtn span').textContent = 'Undo (' + g(st, 'ExportUndoCount') + ' item(s))'; }
 
-                    const box = document.querySelector('#ImportFromSimkl');
-                    box.disabled = !(done1 && done2);
+                    SimklConfig.syncActive = active;
+                    const toggle = document.querySelector('#step3ToggleBtn');
+                    toggle.disabled = !(done1 && done2);
+                    toggle.querySelector('span').textContent = active ? 'Turn off keep in sync' : 'Turn on keep in sync';
                     const hint = document.querySelector('#step3Hint');
                     hint.textContent = (done1 && done2)
-                        ? (active ? '' : 'Steps 1 and 2 are done. Tick the box, then Save, to keep both sides aligned from now on.')
-                        : 'Available once steps 1 and 2 are done. Tick, then Save.';
+                        ? (active ? '' : 'Steps 1 and 2 are done: turn it on to keep both sides aligned from now on.')
+                        : 'Available once steps 1 and 2 are done.';
                     hint.style.display = hint.textContent ? '' : 'none';
                     const activeBox = document.querySelector('#syncActiveBox');
                     if (active) {
@@ -915,7 +915,7 @@
                     } else {
                         activeBox.style.display = 'none';
                     }
-                    show('#importSyncBtn', done1);
+                    show('#importSyncBtn', active);
                     show('#importConfirmBtn', g(st, 'PendingConfirmation') > 0);
                     SimklConfig.renderStatusBox(st, userId);
                     SimklConfig.applyPreviewGate(userId);
@@ -935,12 +935,22 @@
                     confirm: 'Apply all the waiting changes?',
                     undo: 'Undo the last step 1 pass for this profile?'
                 };
+                if (kind === 'keep' && !SimklConfig.syncActive) {
+                    questions.keep = 'Turn on keep in sync for this profile? From now on, what is watched on Simkl is marked here after each playback or library scan (at most once an hour), and manual check marks here always reach Simkl. It takes effect right away.';
+                }
                 if (questions[kind] && !window.confirm(questions[kind])) {
                     return;
                 }
-                const action = kind === 'confirm' ? 'sync?all=true' : kind;
+                const action = kind === 'confirm' ? 'sync?all=true' : kind === 'keep' ? 'keep?on=' + (SimklConfig.syncActive ? 'false' : 'true') : kind;
                 SimklConfig.setWorking(true);
                 SimklAPI.importCall(userId, action, 'POST').then(function (r) {
+                    if (kind === 'keep') {
+                        // The answer is the new status: the box shows the live state.
+                        SimklConfig.setWorking(false);
+                        SimklConfig.lastResult[userId] = false;
+                        SimklConfig.renderImportStatus(userId);
+                        return;
+                    }
                     const g = function (k) { return r ? (r[k] !== undefined ? r[k] : r[k.charAt(0).toLowerCase() + k.slice(1)]) : undefined; };
                     // A preview unlocks the matching run once; a run re-locks it.
                     const gate = SimklConfig.previewDone[userId] || (SimklConfig.previewDone[userId] = {});

@@ -58,6 +58,7 @@ namespace Jellyfin.Plugin.Simkl
                     next.LastScrobble = current.LastScrobble;
                     next.LastScrobbleUrl = current.LastScrobbleUrl;
                     next.LastRewatch = current.LastRewatch;
+                    next.ImportFromSimkl = current.ImportFromSimkl;
                     next.ImportInitialDone = current.ImportInitialDone;
                     next.ImportShowsStamp = current.ImportShowsStamp;
                     next.ImportMoviesStamp = current.ImportMoviesStamp;

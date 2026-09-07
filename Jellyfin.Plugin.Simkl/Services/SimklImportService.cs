@@ -264,6 +264,38 @@ namespace Jellyfin.Plugin.Simkl.Services
         }
 
         /// <summary>
+        /// Turns the continuous sync (step 3) on or off for a profile, effective at once.
+        /// Turning it on needs steps 1 and 2 done and forces the manual check marks to
+        /// reach Simkl both ways, or the next pass would undo them.
+        /// </summary>
+        /// <param name="userId">The Jellyfin user.</param>
+        /// <param name="on">True to keep both sides aligned from now on.</param>
+        /// <returns>The status after the change.</returns>
+        public ImportStatus SetKeepInSync(Guid userId, bool on)
+        {
+            var config = SimklPlugin.Instance?.Configuration.GetByGuid(userId);
+            if (config != null)
+            {
+                if (!on)
+                {
+                    config.ImportFromSimkl = false;
+                    SimklPlugin.Instance?.SaveConfiguration();
+                    _logger.LogInformation("Simkl sync (step 3) turned off for {UserId}", userId);
+                }
+                else if (!string.IsNullOrEmpty(config.UserToken) && config.ImportInitialDone && config.ExportInitialDone)
+                {
+                    config.ImportFromSimkl = true;
+                    config.SyncMarkPlayed = true;
+                    config.SyncMarkUnplayed = true;
+                    SimklPlugin.Instance?.SaveConfiguration();
+                    _logger.LogInformation("Simkl sync (step 3) turned on for {UserId}", userId);
+                }
+            }
+
+            return GetStatus(userId);
+        }
+
+        /// <summary>
         /// Gets the import status of a user, for the settings pages.
         /// </summary>
         /// <param name="userId">The Jellyfin user.</param>

@@ -357,6 +357,18 @@ namespace Jellyfin.Plugin.Simkl.API
         /// Reverts the last import pass.
         /// </summary>
         /// <returns>The report.</returns>
+        /// <summary>
+        /// Turns the continuous sync (step 3) on or off for the calling user, effective at once.
+        /// </summary>
+        /// <param name="on">True to turn it on.</param>
+        /// <returns>The sync status after the change.</returns>
+        [HttpPost("Me/Import/Keep")]
+        public async Task<ActionResult<ImportStatus>> KeepInSync([FromQuery] bool on)
+        {
+            var userId = await GetCallerId().ConfigureAwait(false);
+            return userId == null ? Unauthorized() : Ok(_importService.SetKeepInSync(userId.Value, on));
+        }
+
         [HttpPost("Me/Import/Undo")]
         public async Task<ActionResult<ImportReport>> UndoImport()
         {
@@ -417,7 +429,6 @@ namespace Jellyfin.Plugin.Simkl.API
             config.SyncMarkPlayed = options.SyncMarkPlayed;
             config.SyncMarkUnplayed = options.SyncMarkUnplayed;
             config.EnableRewatches = options.EnableRewatches;
-            config.ImportFromSimkl = options.ImportFromSimkl;
             config.ImportUnwatch = options.ImportUnwatch;
             config.MinLength = Math.Clamp(options.MinLength, 0, 600);
             var known = new HashSet<string>(

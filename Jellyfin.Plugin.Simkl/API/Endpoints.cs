@@ -132,6 +132,19 @@ namespace Jellyfin.Plugin.Simkl.API
         }
 
         /// <summary>
+        /// Turns the continuous sync (step 3) on or off for a user, effective at once.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        /// <param name="on">True to turn it on.</param>
+        /// <returns>The sync status after the change.</returns>
+        [HttpPost("users/import/{userId}/keep")]
+        [Authorize(Policy = "RequiresElevation")]
+        public ActionResult<ImportStatus> KeepInSync([FromRoute] Guid userId, [FromQuery] bool on)
+        {
+            return Ok(_importService.SetKeepInSync(userId, on));
+        }
+
+        /// <summary>
         /// Counts the finished watches waiting to reach Simkl for a user,
         /// typically while their Simkl link is expired.
         /// </summary>

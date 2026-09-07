@@ -440,7 +440,7 @@
                         <div class="simkl-muted" id="simklStep1Status">Loading...</div>
                         <label style="margin-top:0.3rem;">
                             <input type="checkbox" id="simklImportUnwatch"/>
-                            <span>On a full run, also unmark items gone from my Simkl history (only items step 1 marked)</span>
+                            <span>Also untick here what I removed from my Simkl history (only items step 1 ticked; checked on Import / Run a full pass)</span>
                         </label>
                         <div class="simkl-muted" id="simklStep1Gate">Run a preview first: Import unlocks once you have seen what would change.</div>
                         <div class="simkl-stepactions">
@@ -469,15 +469,12 @@
                     <span class="simkl-stepnum" id="simklStep3Num">3</span>
                     <div class="simkl-grow">
                         <div><strong>Keep in sync</strong></div>
-                        <label style="margin-top:0.3rem;">
-                            <input type="checkbox" id="simklImportFromSimkl"/>
-                            <span>Keep Jellyfin in sync with my Simkl history</span>
-                        </label>
-                        <div class="simkl-hint">While this is on, your manual check marks always reach Simkl in both directions, so an episode you untick here is not marked again by the next pass.</div>
-                        <div class="simkl-muted" id="simklStep3Hint">Available once steps 1 and 2 are done. Tick, then Save.</div>
+                        <div class="simkl-hint" style="margin-left:0;">Once on, what you watch on Simkl is marked here after each playback or library scan (at most once an hour), and your manual check marks always reach Simkl in both directions, so an episode you untick is not marked again by the next pass. Takes effect right away, nothing to save.</div>
+                        <div class="simkl-muted" id="simklStep3Hint">Available once steps 1 and 2 are done.</div>
                         <div id="simklSyncActive" class="simkl-syncactive" style="display:none;"><span class="simkl-syncdot"></span><span id="simklSyncActiveText"></span></div>
                         <div class="simkl-stepactions">
-                            <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Sync now</button>
+                            <button class="simkl-btn" type="button" id="simklKeepToggle" disabled>Turn on keep in sync</button>
+                            <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Check Simkl now</button>
                             <button class="simkl-btn" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
                         </div>
                     </div>
@@ -601,7 +598,7 @@
             }
 
             var optionKeys = ['EnablePlaybackScrobbling', 'ScrobbleMovies', 'ScrobbleShows',
-                'SyncMarkPlayed', 'SyncMarkUnplayed', 'EnableRewatches', 'ImportFromSimkl', 'ImportUnwatch'];
+                'SyncMarkPlayed', 'SyncMarkUnplayed', 'EnableRewatches', 'ImportUnwatch'];
 
             var previewDone = { import: false, export: false };
             function applyPreviewGate() {
@@ -610,15 +607,15 @@
                 el('simklStep1Gate').style.display = previewDone.import ? 'none' : '';
                 el('simklStep2Gate').style.display = previewDone.export ? 'none' : '';
             }
+            var syncActive = false;
             function applyManualLock() {
-                var on = el('simklImportFromSimkl').checked;
+                var on = syncActive;
                 ['simklSyncMarkPlayed', 'simklSyncMarkUnplayed'].forEach(function (id) {
                     if (on) { el(id).checked = true; }
                     el(id).disabled = on;
                 });
                 el('simklManualLockNote').style.display = on ? '' : 'none';
             }
-            el('simklImportFromSimkl').addEventListener('change', applyManualLock);
 
             var lastResult = false;
             el('simklHelpBtn').addEventListener('click', function () {
@@ -759,11 +756,14 @@
                     show('simklExportUndo', !!pick(st, 'CanUndoExport'));
                     if (pick(st, 'CanUndoExport')) { el('simklExportUndo').textContent = 'Undo (' + pick(st, 'ExportUndoCount') + ' item(s))'; }
 
-                    el('simklImportFromSimkl').disabled = !(done1 && done2);
+                    syncActive = active;
+                    var toggle = el('simklKeepToggle');
+                    toggle.disabled = !(done1 && done2);
+                    toggle.textContent = active ? 'Turn off keep in sync' : 'Turn on keep in sync';
                     var hint = el('simklStep3Hint');
                     hint.textContent = (done1 && done2)
-                        ? (active ? '' : 'Steps 1 and 2 are done. Tick the box, then Save, to keep both sides aligned from now on.')
-                        : 'Available once steps 1 and 2 are done. Tick, then Save.';
+                        ? (active ? '' : 'Steps 1 and 2 are done: turn it on to keep both sides aligned from now on.')
+                        : 'Available once steps 1 and 2 are done.';
                     hint.style.display = hint.textContent ? '' : 'none';
                     var activeBox = el('simklSyncActive');
                     if (active) {
@@ -779,7 +779,7 @@
                     } else {
                         activeBox.style.display = 'none';
                     }
-                    show('simklImportSync', done1);
+                    show('simklImportSync', active);
                     show('simklImportConfirm', pick(st, 'PendingConfirmation') > 0);
                     renderStatusBox(st);
                     applyPreviewGate();
@@ -799,13 +799,24 @@
                     confirm: 'Apply all the waiting changes?',
                     undo: 'Undo the last step 1 pass?'
                 };
+                if (kind === 'keep' && !syncActive) {
+                    questions.keep = 'Turn on keep in sync? From now on, what you watch on Simkl is marked here after each playback or library scan (at most once an hour), and your manual check marks always reach Simkl. It takes effect right away.';
+                }
                 if (questions[kind] && !window.confirm(questions[kind])) {
                     return;
                 }
                 var paths = { preview: 'Preview', apply: 'Apply', sync: 'Sync', confirm: 'Sync?all=true', undo: 'Undo',
-                    'export-preview': 'ExportPreview', 'export': 'Export', 'export-undo': 'ExportUndo' };
+                    'export-preview': 'ExportPreview', 'export': 'Export', 'export-undo': 'ExportUndo',
+                    keep: 'Keep?on=' + (syncActive ? 'false' : 'true') };
                 setWorking(true);
                 api('/Simkl/Me/Import/' + paths[kind], { method: 'POST' }).then(function (r) {
+                    if (kind === 'keep') {
+                        // The answer is the new status: the box shows the live state.
+                        setWorking(false);
+                        lastResult = false;
+                        renderImportStatus();
+                        return;
+                    }
                     if (kind === 'preview') { previewDone.import = true; }
                     if (kind === 'export-preview') { previewDone.export = true; }
                     if (kind === 'apply') { previewDone.import = false; }
@@ -821,7 +832,7 @@
 
             [['simklImportPreview', 'preview'], ['simklImportApply', 'apply'], ['simklImportUndo', 'undo'],
                 ['simklExportPreview', 'export-preview'], ['simklExport', 'export'], ['simklExportUndo', 'export-undo'],
-                ['simklImportSync', 'sync'], ['simklImportConfirm', 'confirm']].forEach(function (pair) {
+                ['simklImportSync', 'sync'], ['simklImportConfirm', 'confirm'], ['simklKeepToggle', 'keep']].forEach(function (pair) {
                 el(pair[0]).addEventListener('click', function () { importAction(pair[1]); });
             });
 
