@@ -26,7 +26,7 @@
         #simklSelfService .simkl-head h1 {
             margin: 0;
             font-size: 1.5rem;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         #simklSelfService .simkl-tagline {
@@ -36,12 +36,23 @@
         }
 
         #simklSelfService .simkl-card {
-            background: var(--simkl-card);
-            border: 1px solid var(--simkl-line);
-            border-radius: 12px;
-            padding: 1.15rem 1.25rem;
-            margin-bottom: 1rem;
+            background: rgba(127, 127, 127, 0.08);
+            border: 1px solid rgba(127, 127, 127, 0.18);
+            border-radius: 10px;
+            padding: 1.15rem 1.3rem;
+            margin-bottom: 1.1rem;
         }
+
+        #simklSelfService .simkl-cardtitle {
+            margin: 0 0 0.9rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            opacity: 0.55;
+        }
+
+        #simklSelfService .simkl-cardtitle .simkl-muted { font-weight: normal; text-transform: none; letter-spacing: 0; }
 
         #simklSelfService .simkl-pill {
             display: inline-flex;
@@ -74,18 +85,20 @@
 
         #simklSelfService .simkl-muted { opacity: 0.65; font-size: 0.88rem; }
 
+        /* Same shape as Jellyfin's raised buttons on the admin page. */
         #simklSelfService .simkl-btn {
             font: inherit;
-            font-weight: 500;
+            font-weight: 600;
             color: inherit;
-            background: rgba(127, 127, 127, 0.18);
-            border: 1px solid var(--simkl-line);
-            border-radius: 8px;
-            padding: 0.62em 1.1em;
+            background: rgba(127, 127, 127, 0.26);
+            border: 0;
+            border-radius: 0.3em;
+            padding: 0.9em 1.1em;
+            line-height: 1.2;
             cursor: pointer;
         }
 
-        #simklSelfService .simkl-btn:hover { background: rgba(127, 127, 127, 0.3); }
+        #simklSelfService .simkl-btn:hover { background: rgba(127, 127, 127, 0.38); }
 
         #simklSelfService .simkl-btn.primary {
             background: var(--simkl-accent);
@@ -95,10 +108,12 @@
 
         #simklSelfService .simkl-actions {
             display: flex;
-            gap: 0.6rem;
+            gap: 0.8rem;
             flex-wrap: wrap;
-            margin-top: 1rem;
+            margin-top: 1.4rem;
         }
+
+        #simklSelfService .simkl-actions .simkl-btn { flex: 1 1 12em; }
 
         #simklSelfService .simkl-stepactions {
             display: flex;
@@ -109,7 +124,7 @@
 
         #simklSelfService .simkl-stepactions .simkl-btn {
             flex: 0 0 auto;
-            width: 11rem;
+            width: 12em;
             text-align: center;
         }
 
@@ -206,6 +221,7 @@
         #simklSelfService .simkl-tabs { display: block; }
         #simklSelfService .simkl-tablist { display: flex; gap: 0.3rem; flex-wrap: wrap; border-bottom: 2px solid rgba(127,127,127,0.25); margin: 0 0 1.2em; }
         #simklSelfService .simkl-tab { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.3rem; margin-bottom: -2px; background: transparent; color: inherit; border: 0; border-bottom: 3px solid transparent; border-radius: 0.5rem 0.5rem 0 0; opacity: 0.7; font: inherit; font-size: 1.05em; font-weight: 600; cursor: pointer; }
+        #simklSelfService .simkl-tab svg { width: 1.3em; height: 1.3em; fill: currentColor; flex: none; }
         #simklSelfService .simkl-tab:hover { opacity: 1; background: rgba(127,127,127,0.1); }
         #simklSelfService .simkl-tab.is-active { opacity: 1; background: rgba(127,127,127,0.14); border-bottom-color: currentColor; }
         #simklSelfService .simkl-tabpanels { min-width: 0; }
@@ -259,9 +275,9 @@
     <div id="simklLinked" hidden>
         <div class="simkl-tabs">
             <div class="simkl-tablist" role="tablist">
-                <button type="button" class="simkl-tab is-active" data-tab="account">Account</button>
-                <button type="button" class="simkl-tab" data-tab="options">Options</button>
-                <button type="button" class="simkl-tab" data-tab="sync">Simkl sync</button>
+                <button type="button" class="simkl-tab is-active" data-tab="account"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><span>Account</span></button>
+                <button type="button" class="simkl-tab" data-tab="options"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg><span>Scrobbling</span></button>
+                <button type="button" class="simkl-tab" data-tab="sync"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg><span>Simkl sync</span></button>
             </div>
             <div class="simkl-tabpanels">
                 <div class="simkl-tabpanel" data-panel="account">
@@ -329,16 +345,12 @@
                 <label for="simklMinLength" class="simkl-grow">Minimum runtime (minutes)</label>
                 <input type="number" id="simklMinLength" min="0" max="600"/>
             </div>
-            <div class="simkl-actions">
-                <button class="simkl-btn primary" id="simklSave" type="button">Save</button>
-            </div>
-            <div class="simkl-toast" id="simklSaved" hidden>Saved.</div>
         </div>
                 </div>
                 <div class="simkl-tabpanel" data-panel="sync" style="display:none;">
         <div class="simkl-card">
             <div class="simkl-opt" id="simklSyncCard">
-                <div><strong>Simkl sync</strong> <em class="simkl-muted">(experimental)</em></div>
+                <div class="simkl-cardtitle">Simkl sync <span class="simkl-muted">(experimental)</span></div>
                 <details class="simkl-tutorial">
                     <summary>How it works, in three steps</summary>
                     <ol>
@@ -400,13 +412,13 @@
                 </div>
                 <pre class="simkl-muted" id="simklImportResult" style="display:none;white-space:pre-wrap;max-height:16rem;overflow:auto;font-family:inherit;"></pre>
             </div>
-            <div class="simkl-actions">
-                <button class="simkl-btn primary" id="simklSave2" type="button">Save</button>
-            </div>
-            <div class="simkl-toast" id="simklSaved2" hidden>Saved.</div>
         </div>
                 </div>
             </div>
+            <div class="simkl-actions">
+                <button class="simkl-btn primary" id="simklSave" type="button">Save</button>
+            </div>
+            <div class="simkl-toast" id="simklSaved" hidden>Saved.</div>
         </div>
     </div>
 
@@ -838,8 +850,6 @@
             });
             try { showTab(window.localStorage.getItem('simklSelfServiceTab') || 'account'); } catch (e) { showTab('account'); }
 
-            el('simklSave2').addEventListener('click', function () { el('simklSave').click(); });
-
             el('simklSave').addEventListener('click', function () {
                 var body = {
                     MinLength: parseInt(el('simklMinLength').value, 10) || 0,
@@ -852,11 +862,9 @@
                 });
 
                 var saved = el('simklSaved');
-                var saved2 = el('simklSaved2');
                 api('/Simkl/Me/Options', { method: 'POST', body: JSON.stringify(body) }).then(function () {
                     saved.hidden = false;
-                    saved2.hidden = false;
-                    window.setTimeout(function () { saved.hidden = true; saved2.hidden = true; }, 2500);
+                    window.setTimeout(function () { saved.hidden = true; }, 2500);
                     renderImportStatus();
                 }).catch(function (err) {
                     console.error(err);
