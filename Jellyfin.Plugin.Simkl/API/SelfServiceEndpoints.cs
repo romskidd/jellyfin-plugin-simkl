@@ -354,10 +354,6 @@ namespace Jellyfin.Plugin.Simkl.API
         }
 
         /// <summary>
-        /// Reverts the last import pass.
-        /// </summary>
-        /// <returns>The report.</returns>
-        /// <summary>
         /// Turns the continuous sync (step 3) on or off for the calling user, effective at once.
         /// </summary>
         /// <param name="on">True to turn it on.</param>
@@ -369,6 +365,10 @@ namespace Jellyfin.Plugin.Simkl.API
             return userId == null ? Unauthorized() : Ok(_importService.SetKeepInSync(userId.Value, on));
         }
 
+        /// <summary>
+        /// Reverts the last import pass.
+        /// </summary>
+        /// <returns>The report.</returns>
         [HttpPost("Me/Import/Undo")]
         public async Task<ActionResult<ImportReport>> UndoImport()
         {

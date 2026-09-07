@@ -412,6 +412,7 @@
                     </div>
                     <div class="simkl-sb-helpPanel" id="simklHelp" style="display:none;">
                         <h4>How it works, in three steps</h4>
+<p>Each step stands on its own: run only step 1 to bring your Simkl history into Jellyfin, only step 2 to send Jellyfin's history to Simkl, or both. Step 3 is optional and only for those who want both sides kept aligned from then on.</p>
                         <ol>
                 <li><strong>Simkl to Jellyfin.</strong> Everything you watched on Simkl gets marked played here, with the original dates. Items you don't have yet are remembered and marked when they arrive after a library scan.</li>
                 <li><strong>Jellyfin to Simkl.</strong> Everything already marked played here is sent to your Simkl history with its dates. Items that came from step 1 are skipped.</li>
@@ -676,7 +677,7 @@
                 } else if (done1 || done2) {
                     sbOp('Set-up in progress', null, null, false);
                 } else {
-                    sbOp('Nothing run yet. Start with the preview of step 1.', null, null, false);
+                    sbOp('Nothing run yet. Steps 1 and 2 work on their own (import only, export only, or both); step 3 is optional. Start with a preview.', null, null, false);
                 }
                 el('simklSbMsg').classList.remove('is-error');
                 el('simklSbMsg').textContent = [pick(st, 'LastReport'), pick(st, 'ExportLastReport')].filter(Boolean).join('\n');
