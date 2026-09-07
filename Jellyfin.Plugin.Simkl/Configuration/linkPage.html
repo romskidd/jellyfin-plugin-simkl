@@ -225,6 +225,59 @@
         #simklSelfService .simkl-tab:hover { opacity: 1; background: rgba(127,127,127,0.1); }
         #simklSelfService .simkl-tab.is-active { opacity: 1; background: rgba(127,127,127,0.14); border-bottom-color: currentColor; }
         #simklSelfService .simkl-tabpanels { min-width: 0; }
+
+                #simklSelfService .simkl-sb { position: relative; margin: 0.4em 0 1em; padding: 0.9em 1.1em 1em; border-radius: 10px; border: 1px solid rgba(127,127,127,0.25); background: rgba(127,127,127,0.06); transition: border-color 0.4s, box-shadow 0.4s; }
+                #simklSelfService .simkl-sb.is-active { border-color: rgba(34,197,94,0.6); box-shadow: 0 0 0 1px rgba(34,197,94,0.2), 0 0 26px rgba(34,197,94,0.14); background: linear-gradient(120deg, rgba(0,164,220,0.10), rgba(170,92,195,0.10), rgba(34,197,94,0.16), rgba(0,164,220,0.10)); background-size: 300% 300%; animation: simklSbFlow 7s ease infinite; }
+                #simklSelfService .simkl-sb.is-working { border-color: rgba(0,164,220,0.55); }
+                #simklSelfService .simkl-sb-head { display: flex; align-items: center; gap: 0.7em; flex-wrap: wrap; }
+                #simklSelfService .simkl-sb-title { font-size: 0.78em; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.55; flex: 1 1 auto; }
+                #simklSelfService .simkl-sb-state { display: inline-flex; align-items: center; gap: 0.45em; padding: 0.3em 0.85em; border-radius: 999px; font-size: 0.85em; font-weight: 600; background: rgba(127,127,127,0.16); border: 1px solid rgba(127,127,127,0.25); }
+                #simklSelfService .simkl-sb-state::before { content: ''; width: 0.55em; height: 0.55em; border-radius: 50%; background: currentColor; opacity: 0.55; }
+                #simklSelfService .simkl-sb-state.is-on { color: #22c55e; background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.45); }
+                #simklSelfService .simkl-sb-state.is-on::before { opacity: 1; animation: simklPulse 2s ease-in-out infinite; }
+                #simklSelfService .simkl-sb-track { display: flex; gap: 0.45em; margin: 0.8em 0 0.9em; flex-wrap: wrap; }
+                #simklSelfService .simkl-sb-seg { flex: 1 1 10em; display: flex; align-items: center; gap: 0.55em; padding: 0.5em 0.7em; border-radius: 7px; font-size: 0.86em; font-weight: 600; background: rgba(127,127,127,0.13); border-left: 4px solid rgba(127,127,127,0.3); opacity: 0.55; transition: opacity 0.4s, background 0.4s, border-color 0.4s; }
+                #simklSelfService .simkl-sb-seg span { width: 1.45em; height: 1.45em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85em; background: rgba(127,127,127,0.3); flex: none; }
+                #simklSelfService .simkl-sb-seg.done { opacity: 1; }
+                #simklSelfService .simkl-sb-seg.done.s1 { border-left-color: #00a4dc; background: rgba(0,164,220,0.16); }
+                #simklSelfService .simkl-sb-seg.done.s1 span { background: #00a4dc; color: #fff; }
+                #simklSelfService .simkl-sb-seg.done.s2 { border-left-color: #aa5cc3; background: rgba(170,92,195,0.16); }
+                #simklSelfService .simkl-sb-seg.done.s2 span { background: #aa5cc3; color: #fff; }
+                #simklSelfService .simkl-sb-seg.done.s3 { border-left-color: #22c55e; background: rgba(34,197,94,0.16); }
+                #simklSelfService .simkl-sb-seg.done.s3 span { background: #22c55e; color: #fff; }
+                #simklSelfService .simkl-sb-seg.flash { animation: simklSbFlash 0.9s ease-out; }
+                #simklSelfService .simkl-sb-op { display: flex; align-items: center; gap: 0.6em; flex-wrap: wrap; font-weight: 600; min-height: 1.6em; }
+                #simklSelfService .simkl-sb-badge { font-size: 0.72em; padding: 0.15em 0.6em; border-radius: 999px; background: rgba(127,127,127,0.2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+                #simklSelfService .simkl-sb-badge.b1 { background: rgba(0,164,220,0.22); color: #4fc3e8; }
+                #simklSelfService .simkl-sb-badge.b2 { background: rgba(170,92,195,0.22); color: #c98be0; }
+                #simklSelfService .simkl-sb-badge.b3 { background: rgba(34,197,94,0.22); color: #4ade80; }
+                #simklSelfService .simkl-sb-spin { width: 1em; height: 1em; border-radius: 50%; border: 2px solid rgba(0,164,220,0.3); border-top-color: #00a4dc; animation: simklSbSpin 0.9s linear infinite; flex: none; }
+                #simklSelfService .simkl-sb-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5em, 1fr)); gap: 0.5em; margin-top: 0.6em; }
+                #simklSelfService .simkl-sb-tiles:empty { display: none; }
+                #simklSelfService .simkl-sb-tile { padding: 0.55em 0.75em; border-radius: 8px; background: rgba(127,127,127,0.12); border-left: 3px solid rgba(127,127,127,0.4); animation: simklPop 0.4s ease-out; }
+                #simklSelfService .simkl-sb-tile .v { font-size: 1.4em; font-weight: 600; line-height: 1.1; }
+                #simklSelfService .simkl-sb-tile .l { font-size: 0.75em; opacity: 0.65; margin-top: 0.15em; }
+                #simklSelfService .simkl-sb-tile.t1 { border-left-color: #00a4dc; }
+                #simklSelfService .simkl-sb-tile.t2 { border-left-color: #aa5cc3; }
+                #simklSelfService .simkl-sb-tile.t3 { border-left-color: #22c55e; }
+                #simklSelfService .simkl-sb-tile.warn { border-left-color: #f59e0b; }
+                #simklSelfService .simkl-sb-tile.zero { opacity: 0.55; }
+                #simklSelfService .simkl-sb-msg { margin-top: 0.6em; font-size: 0.9em; opacity: 0.8; white-space: pre-line; }
+                #simklSelfService .simkl-sb-msg:empty { display: none; }
+                #simklSelfService .simkl-sb-msg.is-error { color: #f87171; opacity: 1; }
+                #simklSelfService .simkl-sb-details { margin-top: 0.6em; }
+                #simklSelfService .simkl-sb-details summary { cursor: pointer; font-size: 0.88em; opacity: 0.8; }
+                #simklSelfService .simkl-sb-details pre { white-space: pre-wrap; max-height: 16rem; overflow: auto; margin: 0.5em 0 0; font-family: inherit; font-size: 0.86em; opacity: 0.75; }
+                #simklSelfService .simkl-sb-help { width: 2em; height: 2em; border-radius: 50%; border: 1px solid rgba(0,164,220,0.6); background: rgba(0,164,220,0.14); color: #00a4dc; font: inherit; font-weight: 700; font-size: 1em; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex: none; animation: simklSbGlow 2.8s ease-in-out infinite; }
+                #simklSelfService .simkl-sb-help:hover,         #simklSelfService .simkl-sb-help.is-open { background: #00a4dc; color: #fff; animation: none; }
+                #simklSelfService .simkl-sb-helpPanel { margin: 0.7em 0 0.2em; padding: 0.9em 1.1em; border-radius: 10px; border: 1px solid rgba(0,164,220,0.35); background: rgba(0,164,220,0.07); animation: simklPop 0.3s ease-out; }
+                #simklSelfService .simkl-sb-helpPanel h4 { margin: 0 0 0.5em; font-size: 0.95em; }
+                #simklSelfService .simkl-sb-helpPanel ol { margin: 0.4em 0 0.3em; padding-left: 1.4em; }
+                #simklSelfService .simkl-sb-helpPanel li { margin-bottom: 0.3em; }
+        @keyframes simklSbFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes simklSbFlash { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.5); } 100% { box-shadow: 0 0 0 10px rgba(255,255,255,0); } }
+        @keyframes simklSbSpin { to { transform: rotate(360deg); } }
+        @keyframes simklSbGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,164,220,0); } 50% { box-shadow: 0 0 10px 2px rgba(0,164,220,0.5); } }
     </style>
 
     <div class="simkl-head">
@@ -351,15 +404,34 @@
         <div class="simkl-card">
             <div class="simkl-opt" id="simklSyncCard">
                 <div class="simkl-cardtitle">Simkl sync <span class="simkl-muted">(experimental)</span></div>
-                <details class="simkl-tutorial">
-                    <summary>How it works, in three steps</summary>
-                    <ol>
+                <div class="simkl-sb" id="simklStatusBox">
+                    <div class="simkl-sb-head">
+                        <div class="simkl-sb-title">Sync status</div>
+                        <span class="simkl-sb-state" id="simklSbState">Not set up</span>
+                        <button type="button" class="simkl-sb-help" id="simklHelpBtn" title="How it works" aria-label="How it works">?</button>
+                    </div>
+                    <div class="simkl-sb-helpPanel" id="simklHelp" style="display:none;">
+                        <h4>How it works, in three steps</h4>
+                        <ol>
                 <li><strong>Simkl to Jellyfin.</strong> Everything you watched on Simkl gets marked played here, with the original dates. Items you don't have yet are remembered and marked when they arrive after a library scan.</li>
                 <li><strong>Jellyfin to Simkl.</strong> Everything already marked played here is sent to your Simkl history with its dates. Items that came from step 1 are skipped.</li>
                 <li><strong>Keep in sync.</strong> Once both are done, tick the box. From then on, what you watch on Simkl shows up here (checked after a playback or a library scan, at most once an hour), and what you watch here already reaches Simkl in real time.</li>
                     </ol>
                     <p class="simkl-muted">Every step shows a preview first and can be undone for 7 days. Matching uses IMDb/TMDb/TVDB ids only; anime is left out for now. Automatic passes stop at 200 changes until you confirm.</p>
-                </details>
+                    </div>
+                    <div class="simkl-sb-track">
+                        <div class="simkl-sb-seg s1" id="simklSbSeg1"><span>1</span>Simkl to Jellyfin</div>
+                        <div class="simkl-sb-seg s2" id="simklSbSeg2"><span>2</span>Jellyfin to Simkl</div>
+                        <div class="simkl-sb-seg s3" id="simklSbSeg3"><span>3</span>Keep in sync</div>
+                    </div>
+                    <div class="simkl-sb-op" id="simklSbOp"></div>
+                    <div class="simkl-sb-tiles" id="simklSbTiles"></div>
+                    <div class="simkl-sb-msg" id="simklSbMsg"></div>
+                    <details class="simkl-sb-details" id="simklSbDetails" style="display:none;">
+                        <summary id="simklSbSummary">Show the list</summary>
+                        <pre id="simklImportResult"></pre>
+                    </details>
+                </div>
 
                 <div class="simkl-step">
                     <span class="simkl-stepnum" id="simklStep1Num">1</span>
@@ -410,7 +482,6 @@
                         </div>
                     </div>
                 </div>
-                <pre class="simkl-muted" id="simklImportResult" style="display:none;white-space:pre-wrap;max-height:16rem;overflow:auto;font-family:inherit;"></pre>
             </div>
         </div>
                 </div>
@@ -549,6 +620,118 @@
             }
             el('simklImportFromSimkl').addEventListener('change', applyManualLock);
 
+            var lastResult = false;
+            el('simklHelpBtn').addEventListener('click', function () {
+                var panel = el('simklHelp');
+                var open = panel.style.display === 'none';
+                panel.style.display = open ? '' : 'none';
+                el('simklHelpBtn').classList.toggle('is-open', open);
+            });
+            function sbTile(value, label, kind) {
+                var tile = document.createElement('div');
+                tile.className = 'simkl-sb-tile ' + (kind || '') + (Number(value) === 0 ? ' zero' : '');
+                var v = document.createElement('div'); v.className = 'v'; v.textContent = String(value);
+                var l = document.createElement('div'); l.className = 'l'; l.textContent = label;
+                tile.appendChild(v); tile.appendChild(l);
+                return tile;
+            }
+            function sbOp(text, badge, badgeClass, working) {
+                var op = el('simklSbOp');
+                op.textContent = '';
+                if (working) { var spin = document.createElement('span'); spin.className = 'simkl-sb-spin'; op.appendChild(spin); }
+                if (badge) { var b = document.createElement('span'); b.className = 'simkl-sb-badge ' + (badgeClass || ''); b.textContent = badge; op.appendChild(b); }
+                op.appendChild(document.createTextNode(text));
+            }
+            function setWorking(on) {
+                el('simklStatusBox').classList.toggle('is-working', on);
+                if (on) {
+                    sbOp('Working... this can take a minute on a large history.', null, null, true);
+                    el('simklSbMsg').textContent = '';
+                    el('simklSbMsg').classList.remove('is-error');
+                }
+            }
+            function showError(text) {
+                el('simklSbMsg').textContent = text;
+                el('simklSbMsg').classList.add('is-error');
+                sbOp('Request failed', null, null, false);
+            }
+            function renderStatusBox(st) {
+                var fmt = function (d) { return d ? String(d).replace('T', ' ').slice(0, 16) + ' UTC' : ''; };
+                var done1 = !!pick(st, 'InitialDone'), done2 = !!pick(st, 'ExportDone'), active = !!pick(st, 'SyncActive');
+                el('simklSbSeg1').classList.toggle('done', done1);
+                el('simklSbSeg2').classList.toggle('done', done2);
+                el('simklSbSeg3').classList.toggle('done', active);
+                el('simklStatusBox').classList.toggle('is-active', active);
+                var state = el('simklSbState');
+                state.textContent = active ? 'Sync active' : (done1 && done2) ? 'Ready for step 3' : done1 ? 'Step 1 done' : done2 ? 'Step 2 done' : 'Not set up';
+                state.classList.toggle('is-on', active);
+                if (lastResult) { return; }
+                var tiles = el('simklSbTiles');
+                tiles.textContent = '';
+                if (done1 || done2 || active) {
+                    tiles.appendChild(sbTile(pick(st, 'ImportedCount') || 0, 'brought from Simkl', 't1'));
+                    tiles.appendChild(sbTile(pick(st, 'ExportedCount') || 0, 'sent to Simkl', 't2'));
+                    if (pick(st, 'UnmatchedCount') > 0) { tiles.appendChild(sbTile(pick(st, 'UnmatchedCount'), 'not in the library yet', 'warn')); }
+                    if (pick(st, 'PendingConfirmation') > 0) { tiles.appendChild(sbTile(pick(st, 'PendingConfirmation'), 'waiting for your confirmation', 'warn')); }
+                }
+                if (active) {
+                    sbOp('Both sides are kept aligned' + (pick(st, 'LastCheckUtc') ? ' \u00b7 last check ' + fmt(pick(st, 'LastCheckUtc')) : ''), 'live', 'b3', false);
+                } else if (done1 || done2) {
+                    sbOp('Set-up in progress', null, null, false);
+                } else {
+                    sbOp('Nothing run yet. Start with the preview of step 1.', null, null, false);
+                }
+                el('simklSbMsg').classList.remove('is-error');
+                el('simklSbMsg').textContent = [pick(st, 'LastReport'), pick(st, 'ExportLastReport')].filter(Boolean).join('\n');
+                el('simklSbDetails').style.display = 'none';
+            }
+            function renderResult(kind, r) {
+                lastResult = true;
+                setWorking(false);
+                var isExport = kind.indexOf('export') === 0;
+                var isPreview = kind === 'preview' || kind === 'export-preview';
+                var isUndo = kind === 'undo' || kind === 'export-undo';
+                var labels = {
+                    preview: 'Preview \u00b7 Simkl to Jellyfin', apply: 'Import \u00b7 Simkl to Jellyfin', sync: 'Sync pass \u00b7 Simkl to Jellyfin',
+                    confirm: 'Sync pass \u00b7 Simkl to Jellyfin', undo: 'Undo \u00b7 Simkl to Jellyfin',
+                    'export-preview': 'Preview \u00b7 Jellyfin to Simkl', 'export': 'Export \u00b7 Jellyfin to Simkl', 'export-undo': 'Undo \u00b7 Jellyfin to Simkl'
+                };
+                var stepClass = isExport ? 'b2' : (kind === 'sync' || kind === 'confirm') ? 'b3' : 'b1';
+                sbOp(labels[kind] || kind, isPreview ? 'preview' : pick(r, 'Applied') ? 'applied' : 'no change', stepClass, false);
+                var seg = el(isExport ? 'simklSbSeg2' : (kind === 'sync' || kind === 'confirm') ? 'simklSbSeg3' : 'simklSbSeg1');
+                seg.classList.remove('flash'); void seg.offsetWidth; seg.classList.add('flash');
+                var tiles = el('simklSbTiles');
+                tiles.textContent = '';
+                if (!isUndo) {
+                    if (isExport) {
+                        tiles.appendChild(sbTile(pick(r, 'MarkedEpisodes') || 0, isPreview ? 'episodes to send' : 'episodes sent', 't2'));
+                        tiles.appendChild(sbTile(pick(r, 'MarkedMovies') || 0, isPreview ? 'movies to send' : 'movies sent', 't2'));
+                        tiles.appendChild(sbTile(pick(r, 'AlreadyPlayed') || 0, 'already on Simkl', ''));
+                        tiles.appendChild(sbTile((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0), 'without usable ids', 'warn'));
+                    } else {
+                        tiles.appendChild(sbTile(pick(r, 'MarkedEpisodes') || 0, isPreview ? 'episodes to mark' : 'episodes marked', 't1'));
+                        tiles.appendChild(sbTile(pick(r, 'MarkedMovies') || 0, isPreview ? 'movies to mark' : 'movies marked', 't1'));
+                        tiles.appendChild(sbTile(pick(r, 'Unmarked') || 0, isPreview ? 'to unmark' : 'unmarked', 't1'));
+                        tiles.appendChild(sbTile(pick(r, 'AlreadyPlayed') || 0, 'already played', ''));
+                        if (pick(r, 'Excluded') > 0) { tiles.appendChild(sbTile(pick(r, 'Excluded'), 'in excluded libraries', '')); }
+                        tiles.appendChild(sbTile((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0), 'not in the library' + (pick(r, 'UnmatchedShows') > 0 ? ' (' + pick(r, 'UnmatchedShows') + ' unknown shows)' : ''), 'warn'));
+                    }
+                }
+                el('simklSbMsg').classList.remove('is-error');
+                el('simklSbMsg').textContent = pick(r, 'Message') || '';
+                var list = pick(r, 'Lines') || [];
+                var details = el('simklSbDetails');
+                if (list.length) {
+                    details.style.display = '';
+                    details.open = false;
+                    var total = pick(r, 'TotalChanges') || list.length;
+                    el('simklSbSummary').textContent = 'Show the list (' + (total > list.length ? list.length + ' of ' + total : list.length) + ' item(s))';
+                    el('simklImportResult').textContent = list.join('\n') + (total > list.length ? '\n... and ' + (total - list.length) + ' more' : '');
+                } else {
+                    details.style.display = 'none';
+                }
+            }
+
             function renderImportStatus() {
                 var show = function (id, on) { el(id).style.display = on ? '' : 'none'; };
                 var fmt = function (d) { return d ? String(d).replace('T', ' ').slice(0, 16) + ' UTC' : ''; };
@@ -598,6 +781,7 @@
                     }
                     show('simklImportSync', done1);
                     show('simklImportConfirm', pick(st, 'PendingConfirmation') > 0);
+                    renderStatusBox(st);
                     applyPreviewGate();
                     applyManualLock();
                 }).catch(function (err) {
@@ -620,35 +804,18 @@
                 }
                 var paths = { preview: 'Preview', apply: 'Apply', sync: 'Sync', confirm: 'Sync?all=true', undo: 'Undo',
                     'export-preview': 'ExportPreview', 'export': 'Export', 'export-undo': 'ExportUndo' };
-                var result = el('simklImportResult');
-                result.style.display = '';
-                result.textContent = 'Working... this can take a minute on a large history.';
+                setWorking(true);
                 api('/Simkl/Me/Import/' + paths[kind], { method: 'POST' }).then(function (r) {
                     if (kind === 'preview') { previewDone.import = true; }
                     if (kind === 'export-preview') { previewDone.export = true; }
                     if (kind === 'apply') { previewDone.import = false; }
                     if (kind === 'export') { previewDone.export = false; }
-                    var lines = [pick(r, 'Message') || ''];
-                    var isExport = kind.indexOf('export') === 0;
-                    if (kind !== 'undo' && kind !== 'export-undo') {
-                        lines.push(isExport
-                            ? 'Episodes to send: ' + (pick(r, 'MarkedEpisodes') || 0) + ' | Movies to send: ' + (pick(r, 'MarkedMovies') || 0)
-                                + ' | Already on Simkl: ' + (pick(r, 'AlreadyPlayed') || 0) + ' | Without usable ids: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0))
-                            : 'Episodes to mark: ' + (pick(r, 'MarkedEpisodes') || 0) + ' | Movies to mark: ' + (pick(r, 'MarkedMovies') || 0)
-                                + ' | To unmark: ' + (pick(r, 'Unmarked') || 0) + ' | Already played: ' + (pick(r, 'AlreadyPlayed') || 0) + ' | Excluded libraries: ' + (pick(r, 'Excluded') || 0)
-                                + ' | Not in library: ' + ((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0)) + ' item(s) in ' + (pick(r, 'UnmatchedShows') || 0) + ' unknown show(s)');
-                        var list = pick(r, 'Lines') || [];
-                        if (list.length) {
-                            lines.push('');
-                            lines.push(list.join('\n'));
-                            if (pick(r, 'TotalChanges') > list.length) { lines.push('... and ' + (pick(r, 'TotalChanges') - list.length) + ' more'); }
-                        }
-                    }
-                    result.textContent = lines.join('\n');
+                    renderResult(kind, r);
                     renderImportStatus();
                 }).catch(function (err) {
                     console.error(err);
-                    result.textContent = 'The request failed (' + err.message + ').';
+                    setWorking(false);
+                    showError('The request failed (' + err.message + ').');
                 });
             }
 
