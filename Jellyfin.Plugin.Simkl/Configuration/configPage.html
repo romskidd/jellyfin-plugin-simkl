@@ -555,7 +555,7 @@
                                 <span class="simklSbChev">&rsaquo;</span>
                                 <button is="emby-button" type="button" class="raised chain-step" id="wizApply2" disabled onclick="SimklConfig.importAction('export');"><span>Export</span></button>
                                 <span class="simklSbChev">&rsaquo;</span>
-                                <button is="emby-button" type="button" class="raised" id="wizKeep" disabled onclick="SimklConfig.importAction('keep');"><span>Turn on keep in sync</span></button>
+                                <button is="emby-button" type="button" class="raised" id="wizKeep" disabled onclick="SimklConfig.importAction('keep');"><span>Turn on sync</span></button>
                                 <button is="emby-button" type="button" class="raised" id="importSyncBtn" style="display:none;" onclick="SimklConfig.importAction('sync');"><span>Manual resync</span></button>
                                 <button is="emby-button" type="button" class="raised" id="importConfirmBtn" style="display:none;" onclick="SimklConfig.importAction('confirm');"><span>Apply remaining changes</span></button>
                             </div>
@@ -719,7 +719,7 @@
                 wiz('#wizPreview2', !!st.done1 || !!st.done2, st.done2, st.done1 && !st.done2 && !done.export);
                 wiz('#wizApply2', !!done.export && (!!st.done1 || !!st.done2), st.done2, st.done1 && !st.done2 && !!done.export);
                 wiz('#wizKeep', !!st.done1 && !!st.done2, false, st.done1 && st.done2 && !st.active);
-                document.querySelector('#wizKeep span').textContent = st.active ? 'Turn off keep in sync' : 'Turn on keep in sync';
+                document.querySelector('#wizKeep span').textContent = st.active ? 'Turn off sync' : 'Turn on sync';
                 // While the sync is on, the set-up chain steps aside: only the red
                 // Turn off and Manual resync stay.
                 document.querySelector('#wizKeep').classList.toggle('off', !!st.active);
@@ -929,12 +929,12 @@
                     hint.textContent = active
                         ? 'Keep in sync is on: manual check marks here reach Simkl right away, and what is watched on Simkl is marked here after each playback or library scan (at most once an hour). Turn it off any time.'
                         : (done1 && done2)
-                            ? 'Steps 1 and 2 are done. Turn on keep in sync to keep both sides aligned from now on; it takes effect right away, nothing to save.'
+                            ? 'Steps 1 and 2 are done. Turn on the sync to keep both sides aligned from now on; it takes effect right away, nothing to save.'
                             : done1
-                                ? 'Step 1 is done. Next: preview, then export to Simkl. Then turn on keep in sync.'
+                                ? 'Step 1 is done. Next: preview, then export to Simkl. Then turn on the sync.'
                                 : done2
-                                    ? 'Step 2 is done. Next: preview, then import from Simkl. Then turn on keep in sync.'
-                                    : 'Follow the buttons from left to right: preview then import from Simkl, preview then export to Simkl, then turn on keep in sync. Nothing is written without a preview first.';
+                                    ? 'Step 2 is done. Next: preview, then import from Simkl. Then turn on the sync.'
+                                    : 'Follow the buttons from left to right: preview then import from Simkl, preview then export to Simkl, then turn on the sync. Nothing is written without a preview first.';
                     show('#importSyncBtn', active);
                     show('#importConfirmBtn', g(st, 'PendingConfirmation') > 0);
                     SimklConfig.renderStatusBox(st, userId);
@@ -956,7 +956,7 @@
                     undo: 'Undo the last step 1 pass for this profile?'
                 };
                 if (kind === 'keep' && !SimklConfig.syncActive) {
-                    questions.keep = 'Turn on keep in sync for this profile? From now on, what is watched on Simkl is marked here after each playback or library scan (at most once an hour), and manual check marks here always reach Simkl. It takes effect right away.';
+                    questions.keep = 'Turn on the sync for this profile? From now on, what is watched on Simkl is marked here after each playback or library scan (at most once an hour), and manual check marks here always reach Simkl. It takes effect right away.';
                 }
                 if (questions[kind] && !window.confirm(questions[kind])) {
                     return;

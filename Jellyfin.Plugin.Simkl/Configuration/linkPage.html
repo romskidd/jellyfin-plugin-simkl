@@ -453,7 +453,7 @@
                         <span class="simkl-sb-chev">&rsaquo;</span>
                         <button class="simkl-btn chain-step" type="button" id="simklWizApply2" disabled>Export</button>
                         <span class="simkl-sb-chev">&rsaquo;</span>
-                        <button class="simkl-btn" type="button" id="simklWizKeep" disabled>Turn on keep in sync</button>
+                        <button class="simkl-btn" type="button" id="simklWizKeep" disabled>Turn on sync</button>
                         <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Manual resync</button>
                         <button class="simkl-btn" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
                     </div>
@@ -638,7 +638,7 @@
                 wiz('simklWizPreview2', !!st.done1 || !!st.done2, st.done2, st.done1 && !st.done2 && !previewDone.export);
                 wiz('simklWizApply2', !!previewDone.export && (!!st.done1 || !!st.done2), st.done2, st.done1 && !st.done2 && !!previewDone.export);
                 wiz('simklWizKeep', !!st.done1 && !!st.done2, false, st.done1 && st.done2 && !st.active);
-                el('simklWizKeep').textContent = st.active ? 'Turn off keep in sync' : 'Turn on keep in sync';
+                el('simklWizKeep').textContent = st.active ? 'Turn off sync' : 'Turn on sync';
                 // While the sync is on, the set-up chain steps aside: only the red
                 // Turn off and Manual resync stay.
                 el('simklWizKeep').classList.toggle('off', !!st.active);
@@ -796,12 +796,12 @@
                     hint.textContent = active
                         ? 'Keep in sync is on: your manual check marks reach Simkl right away, and what you watch on Simkl is marked here after each playback or library scan (at most once an hour). Turn it off any time.'
                         : (done1 && done2)
-                            ? 'Steps 1 and 2 are done. Turn on keep in sync to keep both sides aligned from now on; it takes effect right away, nothing to save.'
+                            ? 'Steps 1 and 2 are done. Turn on the sync to keep both sides aligned from now on; it takes effect right away, nothing to save.'
                             : done1
-                                ? 'Step 1 is done. Next: preview, then export to Simkl. Then turn on keep in sync.'
+                                ? 'Step 1 is done. Next: preview, then export to Simkl. Then turn on the sync.'
                                 : done2
-                                    ? 'Step 2 is done. Next: preview, then import from Simkl. Then turn on keep in sync.'
-                                    : 'Follow the buttons from left to right: preview then import from Simkl, preview then export to Simkl, then turn on keep in sync. Nothing is written without a preview first.';
+                                    ? 'Step 2 is done. Next: preview, then import from Simkl. Then turn on the sync.'
+                                    : 'Follow the buttons from left to right: preview then import from Simkl, preview then export to Simkl, then turn on the sync. Nothing is written without a preview first.';
                     show('simklImportSync', active);
                     show('simklImportConfirm', pick(st, 'PendingConfirmation') > 0);
                     renderStatusBox(st);
@@ -823,7 +823,7 @@
                     undo: 'Undo the last step 1 pass?'
                 };
                 if (kind === 'keep' && !syncActive) {
-                    questions.keep = 'Turn on keep in sync? From now on, what you watch on Simkl is marked here after each playback or library scan (at most once an hour), and your manual check marks always reach Simkl. It takes effect right away.';
+                    questions.keep = 'Turn on the sync? From now on, what you watch on Simkl is marked here after each playback or library scan (at most once an hour), and your manual check marks always reach Simkl. It takes effect right away.';
                 }
                 if (questions[kind] && !window.confirm(questions[kind])) {
                     return;
