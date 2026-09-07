@@ -278,6 +278,21 @@
         @keyframes simklSbFlash { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.5); } 100% { box-shadow: 0 0 0 10px rgba(255,255,255,0); } }
         @keyframes simklSbSpin { to { transform: rotate(360deg); } }
         @keyframes simklSbGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,164,220,0); } 50% { box-shadow: 0 0 10px 2px rgba(0,164,220,0.5); } }
+
+                #simklSelfService .simkl-sb-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35em; margin: 0.8em 0 0.4em; }
+                #simklSelfService .simkl-sb-chev { opacity: 0.45; font-size: 1.1em; padding: 0 0.1em; user-select: none; }
+                #simklSelfService .simkl-sb-chain .simkl-btn { width: auto; min-width: 10.5em; margin: 0 !important; flex: 0 0 auto; position: relative; }
+                #simklSelfService .simkl-sb-chain .simkl-btn.done { background: rgba(34,197,94,0.2) !important; color: #4ade80 !important; }
+                #simklSelfService .simkl-sb-chain .simkl-btn.done span::before,         #simklSelfService .simkl-sb-chain .simkl-btn.done::before { content: '\2713 '; }
+                #simklSelfService .simkl-sb-chain .simkl-btn.is-next { animation: simklSbNext 2s ease-in-out infinite; }
+                #simklSelfService .simkl-sb-chain .simkl-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+                #simklSelfService .simkl-sb-guide { margin-top: 0.5em; font-size: 0.9em; opacity: 0.85; }
+                #simklSelfService .simkl-sb-guide:empty { display: none; }
+                #simklSelfService .simkl-subcard { padding: 1em 1.1em; border-radius: 10px; background: rgba(127,127,127,0.07); border: 1px solid rgba(127,127,127,0.18); }
+                #simklSelfService .simkl-subcard h4 { margin: 0 0 0.15em; font-size: 1em; }
+                #simklSelfService .simkl-subcard .simkl-subdir { font-size: 0.8em; opacity: 0.55; margin-bottom: 0.5em; }
+        @keyframes simklSbNext { 0%, 100% { box-shadow: 0 0 0 2px rgba(0,164,220,0.35); } 50% { box-shadow: 0 0 0 4px rgba(0,164,220,0.75); } }
+                #simklSelfService .simkl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1em; align-items: start; }
     </style>
 
     <div class="simkl-head">
@@ -330,7 +345,7 @@
             <div class="simkl-tablist" role="tablist">
                 <button type="button" class="simkl-tab is-active" data-tab="account"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><span>Account</span></button>
                 <button type="button" class="simkl-tab" data-tab="options"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg><span>Scrobbling</span></button>
-                <button type="button" class="simkl-tab" data-tab="sync"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg><span>Simkl sync</span></button>
+                <button type="button" class="simkl-tab" data-tab="sync"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg><span>Import / Export &amp; sync</span></button>
             </div>
             <div class="simkl-tabpanels">
                 <div class="simkl-tabpanel" data-panel="account">
@@ -403,15 +418,15 @@
                 <div class="simkl-tabpanel" data-panel="sync" style="display:none;">
         <div class="simkl-card">
             <div class="simkl-opt" id="simklSyncCard">
-                <div class="simkl-cardtitle">Simkl sync <span class="simkl-muted">(experimental)</span></div>
+                <div class="simkl-cardtitle">Import / Export &amp; sync <span class="simkl-muted">(experimental)</span></div>
                 <div class="simkl-sb" id="simklStatusBox">
                     <div class="simkl-sb-head">
-                        <div class="simkl-sb-title">Sync status</div>
+                        <div class="simkl-sb-title">Set up the sync, step by step</div>
                         <span class="simkl-sb-state" id="simklSbState">Not set up</span>
                         <button type="button" class="simkl-sb-help" id="simklHelpBtn" title="How it works" aria-label="How it works">?</button>
                     </div>
                     <div class="simkl-sb-helpPanel" id="simklHelp" style="display:none;">
-                        <h4>How it works, in three steps</h4>
+                        <h4>How it works</h4>
 <p>Each step stands on its own: run only step 1 to bring your Simkl history into Jellyfin, only step 2 to send Jellyfin's history to Simkl, or both. Step 3 is optional and only for those who want both sides kept aligned from then on.</p>
                         <ol>
                 <li><strong>Simkl to Jellyfin.</strong> Everything you watched on Simkl gets marked played here, with the original dates. Items you don't have yet are remembered and marked when they arrive after a library scan.</li>
@@ -425,6 +440,20 @@
                         <div class="simkl-sb-seg s2" id="simklSbSeg2"><span>2</span>Jellyfin to Simkl</div>
                         <div class="simkl-sb-seg s3" id="simklSbSeg3"><span>3</span>Keep in sync</div>
                     </div>
+                    <div class="simkl-sb-chain">
+                        <button class="simkl-btn" type="button" id="simklWizPreview1">Preview import</button>
+                        <span class="simkl-sb-chev">&rsaquo;</span>
+                        <button class="simkl-btn" type="button" id="simklWizApply1" disabled>Import</button>
+                        <span class="simkl-sb-chev">&rsaquo;</span>
+                        <button class="simkl-btn" type="button" id="simklWizPreview2" disabled>Preview export</button>
+                        <span class="simkl-sb-chev">&rsaquo;</span>
+                        <button class="simkl-btn" type="button" id="simklWizApply2" disabled>Export</button>
+                        <span class="simkl-sb-chev">&rsaquo;</span>
+                        <button class="simkl-btn" type="button" id="simklWizKeep" disabled>Turn on keep in sync</button>
+                        <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Check Simkl now</button>
+                        <button class="simkl-btn" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
+                    </div>
+                    <div class="simkl-sb-guide" id="simklStep3Hint"></div>
                     <div class="simkl-sb-op" id="simklSbOp"></div>
                     <div class="simkl-sb-tiles" id="simklSbTiles"></div>
                     <div class="simkl-sb-msg" id="simklSbMsg"></div>
@@ -434,14 +463,15 @@
                     </details>
                 </div>
 
-                <div class="simkl-step">
-                    <span class="simkl-stepnum" id="simklStep1Num">1</span>
-                    <div class="simkl-grow">
-                        <div><strong>Simkl to Jellyfin</strong></div>
+                <div class="simkl-muted" style="margin:0.2em 0 0.8em;">Each direction also works on its own. Use the cards below to only import, only export, or to run one again.</div>
+                <div class="simkl-grid">
+                    <div class="simkl-subcard">
+                        <h4>Import from Simkl</h4>
+                        <div class="simkl-subdir">Simkl to Jellyfin: marks here what your Simkl history lists as watched, with the original dates.</div>
                         <div class="simkl-muted" id="simklStep1Status">Loading...</div>
                         <label style="margin-top:0.3rem;">
                             <input type="checkbox" id="simklImportUnwatch"/>
-                            <span>Also untick here what I removed from my Simkl history (only items step 1 ticked; checked on Import / Run a full pass)</span>
+                            <span>Also untick here what I removed from my Simkl history (only items the import ticked; checked on Import / Run a full pass)</span>
                         </label>
                         <div class="simkl-muted" id="simklStep1Gate">Run a preview first: Import unlocks once you have seen what would change.</div>
                         <div class="simkl-stepactions">
@@ -450,33 +480,15 @@
                             <button class="simkl-btn" type="button" id="simklImportUndo" style="display:none;">Undo</button>
                         </div>
                     </div>
-                </div>
-
-                <div class="simkl-step">
-                    <span class="simkl-stepnum" id="simklStep2Num">2</span>
-                    <div class="simkl-grow">
-                        <div><strong>Jellyfin to Simkl</strong></div>
+                    <div class="simkl-subcard">
+                        <h4>Export to Simkl</h4>
+                        <div class="simkl-subdir">Jellyfin to Simkl: sends what is marked played here and missing on Simkl, with its dates. What Simkl already has is left alone.</div>
                         <div class="simkl-muted" id="simklStep2Status">Loading...</div>
                         <div class="simkl-muted" id="simklStep2Gate">Run a preview first: Export unlocks once you have seen what would be sent.</div>
                         <div class="simkl-stepactions">
                             <button class="simkl-btn" type="button" id="simklExportPreview">Preview</button>
                             <button class="simkl-btn" type="button" id="simklExport" disabled>Export</button>
                             <button class="simkl-btn" type="button" id="simklExportUndo" style="display:none;">Undo</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="simkl-step">
-                    <span class="simkl-stepnum" id="simklStep3Num">3</span>
-                    <div class="simkl-grow">
-                        <div><strong>Keep in sync</strong></div>
-                        <div class="simkl-hint" style="margin-left:0;">Once on, what you watch on Simkl is marked here after each playback or library scan (at most once an hour), and your manual check marks always reach Simkl in both directions, so an episode you untick is not marked again by the next pass. Takes effect right away, nothing to save.</div>
-                        <div class="simkl-muted" id="simklStep3Hint">Available once steps 1 and 2 are done.</div>
-                        <div id="simklSyncActive" class="simkl-syncactive" style="display:none;"><span class="simkl-syncdot"></span><span id="simklSyncActiveText"></span></div>
-                        <div class="simkl-stepactions">
-                            <button class="simkl-btn" type="button" id="simklKeepToggle" disabled>Turn on keep in sync</button>
-                            <button class="simkl-btn" type="button" id="simklImportSync" style="display:none;">Check Simkl now</button>
-                            <button class="simkl-btn" type="button" id="simklImportConfirm" style="display:none;">Apply remaining changes</button>
                         </div>
                     </div>
                 </div>
@@ -602,11 +614,27 @@
                 'SyncMarkPlayed', 'SyncMarkUnplayed', 'EnableRewatches', 'ImportUnwatch'];
 
             var previewDone = { import: false, export: false };
+            var stepsDone = {};
             function applyPreviewGate() {
                 el('simklImportApply').disabled = !previewDone.import;
                 el('simklExport').disabled = !previewDone.export;
                 el('simklStep1Gate').style.display = previewDone.import ? 'none' : '';
                 el('simklStep2Gate').style.display = previewDone.export ? 'none' : '';
+                // The guided chain: a button unlocks once the one before it is done,
+                // the one to click next pulses, the ones already done turn green.
+                var wiz = function (id, enabled, isDone, isNext) {
+                    var b = el(id);
+                    b.disabled = !enabled;
+                    b.classList.toggle('done', !!isDone);
+                    b.classList.toggle('is-next', !!isNext && enabled);
+                };
+                var st = stepsDone;
+                wiz('simklWizPreview1', true, st.done1, !st.done1 && !previewDone.import);
+                wiz('simklWizApply1', !!previewDone.import, st.done1, !st.done1 && !!previewDone.import);
+                wiz('simklWizPreview2', !!st.done1 || !!st.done2, st.done2, st.done1 && !st.done2 && !previewDone.export);
+                wiz('simklWizApply2', !!previewDone.export && (!!st.done1 || !!st.done2), st.done2, st.done1 && !st.done2 && !!previewDone.export);
+                wiz('simklWizKeep', !!st.done1 && !!st.done2, st.active, st.done1 && st.done2 && !st.active);
+                el('simklWizKeep').textContent = st.active ? 'Turn off keep in sync' : 'Turn on keep in sync';
             }
             var syncActive = false;
             function applyManualLock() {
@@ -737,9 +765,6 @@
                     var done1 = !!pick(st, 'InitialDone');
                     var done2 = !!pick(st, 'ExportDone');
                     var active = !!pick(st, 'SyncActive');
-                    el('simklStep1Num').classList.toggle('done', done1);
-                    el('simklStep2Num').classList.toggle('done', done2);
-                    el('simklStep3Num').classList.toggle('done', active);
 
                     var t1 = done1 ? 'Done. ' : 'Not done yet: Preview, then Import. ';
                     if (pick(st, 'LastReport')) { t1 += 'Last run ' + pick(st, 'LastReport') + ' '; }
@@ -758,28 +783,17 @@
                     if (pick(st, 'CanUndoExport')) { el('simklExportUndo').textContent = 'Undo (' + pick(st, 'ExportUndoCount') + ' item(s))'; }
 
                     syncActive = active;
-                    var toggle = el('simklKeepToggle');
-                    toggle.disabled = !(done1 && done2);
-                    toggle.textContent = active ? 'Turn off keep in sync' : 'Turn on keep in sync';
+                    stepsDone = { done1: done1, done2: done2, active: active };
                     var hint = el('simklStep3Hint');
-                    hint.textContent = (done1 && done2)
-                        ? (active ? '' : 'Steps 1 and 2 are done: turn it on to keep both sides aligned from now on.')
-                        : 'Available once steps 1 and 2 are done.';
-                    hint.style.display = hint.textContent ? '' : 'none';
-                    var activeBox = el('simklSyncActive');
-                    if (active) {
-                        el('simklSyncActiveText').textContent = 'Sync active' +
-                            (pick(st, 'LastCheckUtc') ? ' \u00b7 last check ' + fmt(pick(st, 'LastCheckUtc')) : '') +
-                            ' \u00b7 ' + (pick(st, 'ImportedCount') || 0) + ' item(s) brought from Simkl, ' + (pick(st, 'ExportedCount') || 0) + ' sent to Simkl';
-                        if (activeBox.style.display === 'none') {
-                            activeBox.classList.remove('simkl-syncon');
-                            void activeBox.offsetWidth;
-                            activeBox.classList.add('simkl-syncon');
-                        }
-                        activeBox.style.display = '';
-                    } else {
-                        activeBox.style.display = 'none';
-                    }
+                    hint.textContent = active
+                        ? 'Keep in sync is on: your manual check marks reach Simkl right away, and what you watch on Simkl is marked here after each playback or library scan (at most once an hour). Turn it off any time.'
+                        : (done1 && done2)
+                            ? 'Steps 1 and 2 are done. Turn on keep in sync to keep both sides aligned from now on; it takes effect right away, nothing to save.'
+                            : done1
+                                ? 'Step 1 is done. Next: preview, then export to Simkl. Then turn on keep in sync.'
+                                : done2
+                                    ? 'Step 2 is done. Next: preview, then import from Simkl. Then turn on keep in sync.'
+                                    : 'Follow the buttons from left to right: preview then import from Simkl, preview then export to Simkl, then turn on keep in sync. Nothing is written without a preview first.';
                     show('simklImportSync', active);
                     show('simklImportConfirm', pick(st, 'PendingConfirmation') > 0);
                     renderStatusBox(st);
@@ -833,7 +847,8 @@
 
             [['simklImportPreview', 'preview'], ['simklImportApply', 'apply'], ['simklImportUndo', 'undo'],
                 ['simklExportPreview', 'export-preview'], ['simklExport', 'export'], ['simklExportUndo', 'export-undo'],
-                ['simklImportSync', 'sync'], ['simklImportConfirm', 'confirm'], ['simklKeepToggle', 'keep']].forEach(function (pair) {
+                ['simklImportSync', 'sync'], ['simklImportConfirm', 'confirm'], ['simklWizKeep', 'keep'],
+                ['simklWizPreview1', 'preview'], ['simklWizApply1', 'apply'], ['simklWizPreview2', 'export-preview'], ['simklWizApply2', 'export']].forEach(function (pair) {
                 el(pair[0]).addEventListener('click', function () { importAction(pair[1]); });
             });
 
