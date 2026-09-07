@@ -320,15 +320,16 @@
                 @keyframes simklSbSpin { to { transform: rotate(360deg); } }
                 @keyframes simklSbGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,164,220,0); } 50% { box-shadow: 0 0 10px 2px rgba(0,164,220,0.5); } }
 
-                                #SimklConfigurationPage .simklSbchain { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35em; margin: 0.8em 0 0.4em; }
-                                #SimklConfigurationPage .simklSbchev { opacity: 0.45; font-size: 1.1em; padding: 0 0.1em; user-select: none; }
-                                #SimklConfigurationPage .simklSbchain .raised { width: auto; min-width: 10.5em; margin: 0 !important; flex: 0 0 auto; position: relative; }
-                                #SimklConfigurationPage .simklSbchain .raised.done { background: rgba(34,197,94,0.2) !important; color: #4ade80 !important; }
-                                #SimklConfigurationPage .simklSbchain .raised.done span::before,                 #SimklConfigurationPage .simklSbchain .raised.done::before { content: '\2713 '; }
-                                #SimklConfigurationPage .simklSbchain .raised.is-next { animation: simklSbNext 2s ease-in-out infinite; }
-                                #SimklConfigurationPage .simklSbchain .raised[disabled] { opacity: 0.4; cursor: not-allowed; }
-                                #SimklConfigurationPage .simklSbguide { margin-top: 0.5em; font-size: 0.9em; opacity: 0.85; }
-                                #SimklConfigurationPage .simklSbguide:empty { display: none; }
+                                #SimklConfigurationPage .simklSbChain { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35em; margin: 0.8em 0 0.4em; }
+                                #SimklConfigurationPage .simklSbChev { opacity: 0.45; font-size: 1.1em; padding: 0 0.1em; user-select: none; }
+                                #SimklConfigurationPage .simklSbChain .raised { width: auto; min-width: 10.5em; margin: 0 !important; flex: 0 0 auto; position: relative; }
+                                #SimklConfigurationPage .simklSbChain .raised.done { background: rgba(34,197,94,0.2) !important; color: #4ade80 !important; }
+                                #SimklConfigurationPage .simklSbChain .raised.done span::before,                 #SimklConfigurationPage .simklSbChain .raised.done::before { content: '\2713 '; }
+                                #SimklConfigurationPage .simklSbChain .raised.is-next { animation: simklSbNext 2s ease-in-out infinite; }
+                                #SimklConfigurationPage .simklSbChain .raised[disabled] { opacity: 0.4; cursor: not-allowed; }
+                #SimklConfigurationPage .simklSbChain .raised.done[disabled] { opacity: 0.9; cursor: default; }
+                                #SimklConfigurationPage .simklSbGuide { margin-top: 0.5em; font-size: 0.9em; opacity: 0.85; }
+                                #SimklConfigurationPage .simklSbGuide:empty { display: none; }
                                 #SimklConfigurationPage .simklSubCard { padding: 1em 1.1em; border-radius: 10px; background: rgba(127,127,127,0.07); border: 1px solid rgba(127,127,127,0.18); }
                                 #SimklConfigurationPage .simklSubCard h4 { margin: 0 0 0.15em; font-size: 1em; }
                                 #SimklConfigurationPage .simklSubCard .simklSubDir { font-size: 0.8em; opacity: 0.55; margin-bottom: 0.5em; }
