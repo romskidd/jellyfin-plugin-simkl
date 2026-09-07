@@ -1,7 +1,7 @@
 ---
 name: "RK Simkl Scrobbler"
 guid: "03A7C840-6154-471F-8BE3-856CDC26D500"
-version: "9.6.0.5"
+version: "9.6.0.0"
 targetAbi: "10.11.7.0"
 framework: "net9.0"
 owner: "romskidd"
@@ -14,7 +14,7 @@ category: "General"
 artifacts:
   - "Jellyfin.Plugin.Simkl.dll"
 changelog: |-
-  - Beta 1 of the Simkl sync (experimental, off by default). A new "Simkl sync"
+  - Beta of the Simkl sync (experimental, off by default). A new "Simkl sync"
     tab sets it up in three steps. 1. Simkl to Jellyfin: marks as played, in
     Jellyfin, the episodes and movies your Simkl history lists (watch date and
     play count included; only items present in your libraries, unmatched ones
@@ -31,6 +31,27 @@ changelog: |-
     summary without tokens, the plugin's recent log lines, token-like strings
     masked) to copy into a bug report.
   - Settings pages redesigned: the users' link first, then the profile, then
-    Account / Scrobbling / Simkl sync / Logs tabs. Both pages are wider.
-  - Simkl reads are paced like writes, at least one second apart per user, so
-    linking an account no longer trips Simkl's burst detector.
+    Account / Scrobbling / Simkl sync / Logs tabs. Both pages are wider, and the
+    self-service page has the same look as the admin page.
+  - Simkl reads are paced like writes, at least one second apart per user, and
+    requests are paced server-wide too (at least 0.6 s apart, whichever
+    profile), so linking or starting with several profiles never trips Simkl's
+    burst detector.
+  - Beta 2 additions. The sync state belongs to the Simkl account: link a
+    profile to another account and its steps start over (what was marked in
+    Jellyfin stays as it is).
+  - Step 2 (Jellyfin to Simkl) reads the Simkl history first and leaves out what
+    Simkl already lists as watched: it never moves your watch dates, and its
+    undo only removes what it added. Only the batches Simkl accepted are
+    recorded as sent.
+  - A save on the admin page no longer overwrites the account details and sync
+    state the server maintains, and the page reloads them after a link, a log
+    out or a save. Profiles linked to the same Simkl account (Simkl hands them
+    the same token) all get the account details.
+  - A login Simkl rejects is detected on every call, and a history write Simkl
+    refuses is no longer counted as sent. Unmatched Simkl items are retried
+    after a library scan for every profile that did step 1.
+  - Self-service page: the library list only shows what the user may see,
+    unlinking forgets the cached account, PIN polling never faster than 5 s.
+    Retry passes no longer overlap, and a stop no longer forgets a newer
+    playback in the same session.

@@ -31,7 +31,7 @@ Jellyfin then offers the newest version of the two):
 https://raw.githubusercontent.com/romskidd/jellyfin-plugin-simkl-scrobbler/master/manifest-beta.json
 ```
 
-Current beta: **9.6.0.0 Beta 1** with the two-way Simkl sync, see the
+Current beta: **9.6.0.0 Beta 2** with the two-way Simkl sync, see the
 [version history](#version-history).
 
 Requires Jellyfin 10.11.x. A free Simkl account is enough; rewatch tracking needs
@@ -102,7 +102,7 @@ Each profile keeps its own Simkl login and settings.
 ## Upgrade notes
 
 > [!NOTE]
-> **9.6.0.0 Beta 1** is a beta: the Simkl sync is new and marked experimental. It is off
+> **9.6.0.0 Beta 2** is a beta: the Simkl sync is new and marked experimental. It is off
 > until you set it up, and the scrobbling side is unchanged. Please report anything odd
 > in the [issues](https://github.com/romskidd/jellyfin-plugin-simkl-scrobbler/issues),
 > with the report from the new **Logs** tab.
@@ -168,7 +168,7 @@ their review. Feedback, bug reports and ideas are welcome in the
 
 | Version | Date | Changes |
 |---|---|---|
-| **9.6.0.0** (Beta 1) | 2026-09-06 | **Simkl sync** (experimental, beta channel): three-step setup, 1. Simkl to Jellyfin, 2. Jellyfin to Simkl, 3. Keep in sync (after each playback and library scan, at most hourly). Preview before every write, 7-day undo both ways, confirmation above 200 changes, excluded libraries untouched, anime not covered, unmatched items retried after each scan, per linked profile. Finished watches kept while a link is expired (30 days). **Logs** tab with a diagnostic report. Settings pages redesigned (users' link, profile, then tabs) and wider. Simkl reads paced like writes. |
+| **9.6.0.0** (Beta 2) | 2026-09-07 | **Simkl sync** (experimental, beta channel): three-step setup, 1. Simkl to Jellyfin, 2. Jellyfin to Simkl, 3. Keep in sync (after each playback and library scan, at most hourly). Preview before every write, 7-day undo both ways, confirmation above 200 changes, excluded libraries untouched, anime not covered, unmatched items retried after each scan, per linked profile. Finished watches kept while a link is expired (30 days). **Logs** tab with a diagnostic report. Settings pages redesigned (users' link, profile, then tabs) and wider, self-service page styled like the admin page. Simkl reads paced like writes, plus server-wide pacing. Beta 2 (2026-09-07): sync state tied to the Simkl account (relinking another account starts over); step 2 skips what Simkl already has, never moves watch dates, its undo only removes what it added; admin saves keep the server's account and sync fields; rejected logins detected on every call, refused history writes not counted as sent; self-service library list limited to what the user may see. |
 | **9.5.0.0** | 2026-09-03 | Renamed **RK Simkl Scrobbler** at Simkl's request (unofficial plugin, not affiliated with or endorsed by Simkl or Jellyfin); plugin id unchanged. Rewatches are now filed by Simkl directly on the scrobble stop (Pro/VIP): no more watched lookup at playback start, no separate history write, same safeguards. Settings and statistics re-read only when Simkl's activity feed changes; PIN status polled at Simkl's interval. Identifies as rk-simkl-scrobbler. |
 | **9.4.0.0** | 2026-09-02 | **Rewatches** (Simkl Pro / VIP) recorded as separate Simkl sessions, off by default, with safeguards (item already watched per Jellyfin or Simkl, at least half played this session). The plugin now runs as its **own Simkl application**: every user has to link their account again once (shown as "Link expired"); stale links are detected at startup. "Open on Simkl" link and last rewatch on both settings pages. Requests paced to Simkl's one-write-per-second limit. Security pass (admin endpoints require an administrator, tokens kept out of logs and console, escaped parameters). PIN flow lands on a confirmation page. |
 | **9.3.0.0** | 2026-08-31 | Self-service linking: any user can connect their own Simkl account from a standalone page, no dashboard access needed (optional Plugin Pages integration adds it to the sidebar; no dependency either way). Watches Simkl doesn't confirm are queued and replayed for up to 24h. Per-user library exclusions. An expired Simkl login is now reported instead of failing silently. The plugin also appears in the dashboard sidebar and the settings page was redesigned. |
