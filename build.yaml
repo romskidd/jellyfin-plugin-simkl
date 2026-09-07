@@ -1,7 +1,7 @@
 ---
 name: "RK Simkl Scrobbler"
 guid: "03A7C840-6154-471F-8BE3-856CDC26D500"
-version: "9.6.0.12"
+version: "9.6.0.13"
 targetAbi: "10.11.7.0"
 framework: "net9.0"
 owner: "romskidd"

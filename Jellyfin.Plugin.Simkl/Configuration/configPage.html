@@ -328,6 +328,9 @@
                                 #SimklConfigurationPage .simklSbChain .raised.is-next { animation: simklSbNext 2s ease-in-out infinite; }
                                 #SimklConfigurationPage .simklSbChain .raised[disabled] { opacity: 0.4; cursor: not-allowed; }
                 #SimklConfigurationPage .simklSbChain .raised.done[disabled] { opacity: 0.9; cursor: default; }
+                #SimklConfigurationPage .simklSbChain.is-live .simklSbChev, #SimklConfigurationPage .simklSbChain.is-live .raised.chain-step { display: none; }
+                #SimklConfigurationPage .simklSbChain .raised.off { background: rgba(239,68,68,0.22) !important; color: #f87171 !important; }
+                #SimklConfigurationPage .simklSbChain .raised.off:hover { background: rgba(239,68,68,0.36) !important; }
                                 #SimklConfigurationPage .simklSbGuide { margin-top: 0.5em; font-size: 0.9em; opacity: 0.85; }
                                 #SimklConfigurationPage .simklSbGuide:empty { display: none; }
                                 #SimklConfigurationPage .simklSubCard { padding: 1em 1.1em; border-radius: 10px; background: rgba(127,127,127,0.07); border: 1px solid rgba(127,127,127,0.18); }
@@ -544,16 +547,16 @@
                                 <div class="simklSbSeg s3" id="simklSbSeg3"><span>3</span>Keep in sync</div>
                             </div>
                             <div class="simklSbChain">
-                                <button is="emby-button" type="button" class="raised" id="wizPreview1" onclick="SimklConfig.importAction('preview');"><span>Preview import</span></button>
+                                <button is="emby-button" type="button" class="raised chain-step" id="wizPreview1" onclick="SimklConfig.importAction('preview');"><span>Preview import</span></button>
                                 <span class="simklSbChev">&rsaquo;</span>
-                                <button is="emby-button" type="button" class="raised" id="wizApply1" disabled onclick="SimklConfig.importAction('apply');"><span>Import</span></button>
+                                <button is="emby-button" type="button" class="raised chain-step" id="wizApply1" disabled onclick="SimklConfig.importAction('apply');"><span>Import</span></button>
                                 <span class="simklSbChev">&rsaquo;</span>
-                                <button is="emby-button" type="button" class="raised" id="wizPreview2" disabled onclick="SimklConfig.importAction('export-preview');"><span>Preview export</span></button>
+                                <button is="emby-button" type="button" class="raised chain-step" id="wizPreview2" disabled onclick="SimklConfig.importAction('export-preview');"><span>Preview export</span></button>
                                 <span class="simklSbChev">&rsaquo;</span>
-                                <button is="emby-button" type="button" class="raised" id="wizApply2" disabled onclick="SimklConfig.importAction('export');"><span>Export</span></button>
+                                <button is="emby-button" type="button" class="raised chain-step" id="wizApply2" disabled onclick="SimklConfig.importAction('export');"><span>Export</span></button>
                                 <span class="simklSbChev">&rsaquo;</span>
                                 <button is="emby-button" type="button" class="raised" id="wizKeep" disabled onclick="SimklConfig.importAction('keep');"><span>Turn on keep in sync</span></button>
-                                <button is="emby-button" type="button" class="raised" id="importSyncBtn" style="display:none;" onclick="SimklConfig.importAction('sync');"><span>Check Simkl now</span></button>
+                                <button is="emby-button" type="button" class="raised" id="importSyncBtn" style="display:none;" onclick="SimklConfig.importAction('sync');"><span>Manual resync</span></button>
                                 <button is="emby-button" type="button" class="raised" id="importConfirmBtn" style="display:none;" onclick="SimklConfig.importAction('confirm');"><span>Apply remaining changes</span></button>
                             </div>
                             <div class="simklSbGuide" id="step3Hint"></div>
@@ -715,8 +718,12 @@
                 wiz('#wizApply1', !!done.import, st.done1, !st.done1 && !!done.import);
                 wiz('#wizPreview2', !!st.done1 || !!st.done2, st.done2, st.done1 && !st.done2 && !done.export);
                 wiz('#wizApply2', !!done.export && (!!st.done1 || !!st.done2), st.done2, st.done1 && !st.done2 && !!done.export);
-                wiz('#wizKeep', !!st.done1 && !!st.done2, st.active, st.done1 && st.done2 && !st.active);
+                wiz('#wizKeep', !!st.done1 && !!st.done2, false, st.done1 && st.done2 && !st.active);
                 document.querySelector('#wizKeep span').textContent = st.active ? 'Turn off keep in sync' : 'Turn on keep in sync';
+                // While the sync is on, the set-up chain steps aside: only the red
+                // Turn off and Manual resync stay.
+                document.querySelector('#wizKeep').classList.toggle('off', !!st.active);
+                document.querySelector('#simklStatusBox .simklSbChain').classList.toggle('is-live', !!st.active);
             },
             syncActive: false,
             applyManualLock: function () {
