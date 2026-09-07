@@ -323,11 +323,11 @@
                                 #SimklConfigurationPage .simklSbChain { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35em; margin: 0.8em 0 0.4em; }
                                 #SimklConfigurationPage .simklSbChev { opacity: 0.45; font-size: 1.1em; padding: 0 0.1em; user-select: none; }
                                 #SimklConfigurationPage .simklSbChain .raised { width: auto; min-width: 10.5em; margin: 0 !important; flex: 0 0 auto; position: relative; }
-                                #SimklConfigurationPage .simklSbChain .raised.done { background: rgba(34,197,94,0.2) !important; color: #4ade80 !important; }
+                                #SimklConfigurationPage .simklSbChain .raised.done { background: transparent !important; color: #4ade80 !important; border: 1px solid rgba(34,197,94,0.45); box-shadow: none !important; pointer-events: none; cursor: default; }
                                 #SimklConfigurationPage .simklSbChain .raised.done span::before { content: '\2713 '; }
                                 #SimklConfigurationPage .simklSbChain .raised.is-next { animation: simklSbNext 2s ease-in-out infinite; }
-                                #SimklConfigurationPage .simklSbChain .raised[disabled] { opacity: 0.4; cursor: not-allowed; }
-                #SimklConfigurationPage .simklSbChain .raised.done[disabled] { opacity: 0.9; cursor: default; }
+                                #SimklConfigurationPage .simklSbChain .raised[disabled]:not(.done) { opacity: 0.35; cursor: not-allowed; background: transparent !important; border: 1px dashed rgba(127,127,127,0.5); box-shadow: none !important; }
+                #SimklConfigurationPage .simklSbChain .raised.done[disabled] { opacity: 1; }
                 #SimklConfigurationPage .simklSbChain.is-live .simklSbChev, #SimklConfigurationPage .simklSbChain.is-live .raised.chain-step { display: none; }
                 #SimklConfigurationPage .simklSbChain .raised.off { background: rgba(239,68,68,0.22) !important; color: #f87171 !important; }
                 #SimklConfigurationPage .simklSbChain .raised.off:hover { background: rgba(239,68,68,0.36) !important; }
@@ -714,10 +714,12 @@
                     b.classList.toggle('done', !!isDone);
                     b.classList.toggle('is-next', !!isNext && enabled);
                 };
-                wiz('#wizPreview1', true, st.done1, !st.done1 && !done.import);
-                wiz('#wizApply1', !!done.import, st.done1, !st.done1 && !!done.import);
-                wiz('#wizPreview2', !!st.done1 || !!st.done2, st.done2, st.done1 && !st.done2 && !done.export);
-                wiz('#wizApply2', !!done.export && (!!st.done1 || !!st.done2), st.done2, st.done1 && !st.done2 && !!done.export);
+                // A done step turns into a green chip: running it again goes through
+                // the cards below. What is not available yet stays dashed and dim.
+                wiz('#wizPreview1', !st.done1, st.done1, !st.done1 && !done.import);
+                wiz('#wizApply1', !st.done1 && !!done.import, st.done1, !st.done1 && !!done.import);
+                wiz('#wizPreview2', !!st.done1 && !st.done2, st.done2, st.done1 && !st.done2 && !done.export);
+                wiz('#wizApply2', !!st.done1 && !st.done2 && !!done.export, st.done2, st.done1 && !st.done2 && !!done.export);
                 wiz('#wizKeep', !!st.done1 && !!st.done2, false, st.done1 && st.done2 && !st.active);
                 document.querySelector('#wizKeep span').textContent = st.active ? 'Turn off sync' : 'Turn on sync';
                 // While the sync is on, the set-up chain steps aside: only the red
