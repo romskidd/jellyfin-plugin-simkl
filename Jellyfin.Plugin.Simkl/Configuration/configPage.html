@@ -339,6 +339,18 @@
                                 #SimklConfigurationPage .simklSubCard h4 { margin: 0 0 0.15em; font-size: 1em; }
                                 #SimklConfigurationPage .simklSubCard .simklSubDir { font-size: 0.8em; opacity: 0.55; margin-bottom: 0.5em; }
                 @keyframes simklSbNext { 0%, 100% { box-shadow: 0 0 0 2px rgba(0,164,220,0.35); } 50% { box-shadow: 0 0 0 4px rgba(0,164,220,0.75); } }
+
+                                #SimklConfigurationPage .simklSbTile.clickable { cursor: pointer; transition: background 0.15s; }
+                                #SimklConfigurationPage .simklSbTile.clickable:hover { background: rgba(127,127,127,0.24); }
+                                #SimklConfigurationPage .simklSbTile.clickable .l::after { content: ' \2197'; opacity: 0.6; }
+                                #SimklConfigurationPage .simklModal { position: fixed; inset: 0; background: rgba(0,0,0,0.62); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1em; }
+                                #SimklConfigurationPage .simklModal-box { width: min(760px, 94vw); max-height: 82vh; background: #1b1f23; color: #eef1f3; border-radius: 12px; border: 1px solid rgba(127,127,127,0.3); display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.55); }
+                                #SimklConfigurationPage .simklModal-head { display: flex; align-items: center; justify-content: space-between; gap: 1em; padding: 0.9em 1.1em; border-bottom: 1px solid rgba(127,127,127,0.25); font-weight: 600; }
+                                #SimklConfigurationPage .simklModal-close { background: transparent; border: 0; color: inherit; font: inherit; font-size: 1.5em; line-height: 1; cursor: pointer; padding: 0 0.2em; opacity: 0.75; }
+                                #SimklConfigurationPage .simklModal-close:hover { opacity: 1; }
+                                #SimklConfigurationPage .simklModal-list { margin: 0; padding: 0.9em 1.1em; overflow: auto; white-space: pre-wrap; font-family: inherit; font-size: 0.93em; line-height: 1.55; }
+                                #SimklConfigurationPage .simklModal-note { padding: 0.55em 1.1em 0.9em; font-size: 0.85em; opacity: 0.7; border-top: 1px solid rgba(127,127,127,0.2); }
+                                #SimklConfigurationPage .simklModal-note:empty { display: none; }
             </style>
 
             <div class="simklHeader">
@@ -631,6 +643,13 @@
                 </div>
 
             </form>
+            <div class="simklModal" id="simklModal" style="display:none;" onclick="if (event.target === this) { SimklConfig.closeList(); }">
+                <div class="simklModal-box" role="dialog" aria-modal="true" aria-labelledby="simklModalTitle">
+                    <div class="simklModal-head"><span id="simklModalTitle"></span><button type="button" class="simklModal-close" aria-label="Close" onclick="SimklConfig.closeList();">&times;</button></div>
+                    <pre class="simklModal-list" id="simklModalList"></pre>
+                    <div class="simklModal-note" id="simklModalNote"></div>
+                </div>
+            </div>
         </div>
     </div>
     <script type="text/javascript">
@@ -785,14 +804,34 @@
                 panel.style.display = open ? '' : 'none';
                 document.querySelector('#simklHelpBtn').classList.toggle('is-open', open);
             },
-            sbTile: function (value, label, kind) {
+            sbTile: function (value, label, kind, lines) {
                 const tile = document.createElement('div');
                 tile.className = 'simklSbTile ' + (kind || '') + (Number(value) === 0 ? ' zero' : '');
                 const v = document.createElement('div'); v.className = 'v'; v.textContent = String(value);
                 const l = document.createElement('div'); l.className = 'l'; l.textContent = label;
                 tile.appendChild(v); tile.appendChild(l);
+                if (lines && lines.length && Number(value) > 0) {
+                    // A number you can open: the items behind it.
+                    tile.classList.add('clickable');
+                    tile.title = 'Show the items';
+                    tile.addEventListener('click', function () { SimklConfig.openList(value + ' ' + label, lines, Number(value)); });
+                }
                 return tile;
             },
+            openList: function (title, lines, total) {
+                document.querySelector('#simklModalTitle').textContent = title;
+                document.querySelector('#simklModalList').textContent = lines.join('\n');
+                document.querySelector('#simklModalNote').textContent = total > lines.length
+                    ? 'Showing the first ' + lines.length + ' of ' + total + ' item(s): the server keeps the list short.'
+                    : '';
+                document.querySelector('#simklModal').style.display = '';
+                document.addEventListener('keydown', SimklConfig.onModalKey);
+            },
+            closeList: function () {
+                document.querySelector('#simklModal').style.display = 'none';
+                document.removeEventListener('keydown', SimklConfig.onModalKey);
+            },
+            onModalKey: function (e) { if (e.key === 'Escape') { SimklConfig.closeList(); } },
             sbOp: function (text, badge, badgeClass, working) {
                 const op = document.querySelector('#simklSbOp');
                 op.textContent = '';
@@ -865,16 +904,21 @@
                 seg.classList.remove('flash'); void seg.offsetWidth; seg.classList.add('flash');
                 const tiles = document.querySelector('#simklSbTiles');
                 tiles.textContent = '';
+                // The list comes as lines prefixed + (mark), - (unmark) or > (send);
+                // an episode line carries its SxxEyy.
+                const allLines = g('Lines') || [];
+                const isEp = function (t) { return /S\d+E\d+/.test(t); };
+                const pick = function (prefix, ep) { return allLines.filter(function (t) { return t.indexOf(prefix) === 0 && (ep === null || isEp(t) === ep); }).map(function (t) { return t.slice(2); }); };
                 if (!isUndo) {
                     if (isExport) {
-                        tiles.appendChild(SimklConfig.sbTile(g('MarkedEpisodes') || 0, isPreview ? 'episodes to send' : 'episodes sent', 't2'));
-                        tiles.appendChild(SimklConfig.sbTile(g('MarkedMovies') || 0, isPreview ? 'movies to send' : 'movies sent', 't2'));
+                        tiles.appendChild(SimklConfig.sbTile(g('MarkedEpisodes') || 0, isPreview ? 'episodes to send' : 'episodes sent', 't2', pick('> ', true)));
+                        tiles.appendChild(SimklConfig.sbTile(g('MarkedMovies') || 0, isPreview ? 'movies to send' : 'movies sent', 't2', pick('> ', false)));
                         tiles.appendChild(SimklConfig.sbTile(g('AlreadyPlayed') || 0, 'already on Simkl', ''));
                         tiles.appendChild(SimklConfig.sbTile((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0), 'without usable ids', 'warn'));
                     } else {
-                        tiles.appendChild(SimklConfig.sbTile(g('MarkedEpisodes') || 0, isPreview ? 'episodes to mark' : 'episodes marked', 't1'));
-                        tiles.appendChild(SimklConfig.sbTile(g('MarkedMovies') || 0, isPreview ? 'movies to mark' : 'movies marked', 't1'));
-                        tiles.appendChild(SimklConfig.sbTile(g('Unmarked') || 0, isPreview ? 'to unmark' : 'unmarked', 't1'));
+                        tiles.appendChild(SimklConfig.sbTile(g('MarkedEpisodes') || 0, isPreview ? 'episodes to mark' : 'episodes marked', 't1', pick('+ ', true)));
+                        tiles.appendChild(SimklConfig.sbTile(g('MarkedMovies') || 0, isPreview ? 'movies to mark' : 'movies marked', 't1', pick('+ ', false)));
+                        tiles.appendChild(SimklConfig.sbTile(g('Unmarked') || 0, isPreview ? 'to unmark' : 'unmarked', 't1', pick('- ', null)));
                         tiles.appendChild(SimklConfig.sbTile(g('AlreadyPlayed') || 0, 'already played', ''));
                         if (g('Excluded') > 0) { tiles.appendChild(SimklConfig.sbTile(g('Excluded'), 'in excluded libraries', '')); }
                         tiles.appendChild(SimklConfig.sbTile((g('UnmatchedEpisodes') || 0) + (g('UnmatchedMovies') || 0), 'not in the library' + (g('UnmatchedShows') > 0 ? ' (' + g('UnmatchedShows') + ' unknown shows)' : ''), 'warn'));

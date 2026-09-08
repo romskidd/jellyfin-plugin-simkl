@@ -302,6 +302,18 @@
                 #simklSelfService .simkl-subcard .simkl-subdir { font-size: 0.8em; opacity: 0.55; margin-bottom: 0.5em; }
         @keyframes simklSbNext { 0%, 100% { box-shadow: 0 0 0 2px rgba(0,164,220,0.35); } 50% { box-shadow: 0 0 0 4px rgba(0,164,220,0.75); } }
                 #simklSelfService .simkl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1em; align-items: start; }
+
+                #simklSelfService .simkl-sb-tile.clickable { cursor: pointer; transition: background 0.15s; }
+                #simklSelfService .simkl-sb-tile.clickable:hover { background: rgba(127,127,127,0.24); }
+                #simklSelfService .simkl-sb-tile.clickable .l::after { content: ' \2197'; opacity: 0.6; }
+                #simklSelfService .simkl-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.62); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1em; }
+                #simklSelfService .simkl-modal-box { width: min(760px, 94vw); max-height: 82vh; background: #1b1f23; color: #eef1f3; border-radius: 12px; border: 1px solid rgba(127,127,127,0.3); display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.55); }
+                #simklSelfService .simkl-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 1em; padding: 0.9em 1.1em; border-bottom: 1px solid rgba(127,127,127,0.25); font-weight: 600; }
+                #simklSelfService .simkl-modal-close { background: transparent; border: 0; color: inherit; font: inherit; font-size: 1.5em; line-height: 1; cursor: pointer; padding: 0 0.2em; opacity: 0.75; }
+                #simklSelfService .simkl-modal-close:hover { opacity: 1; }
+                #simklSelfService .simkl-modal-list { margin: 0; padding: 0.9em 1.1em; overflow: auto; white-space: pre-wrap; font-family: inherit; font-size: 0.93em; line-height: 1.55; }
+                #simklSelfService .simkl-modal-note { padding: 0.55em 1.1em 0.9em; font-size: 0.85em; opacity: 0.7; border-top: 1px solid rgba(127,127,127,0.2); }
+                #simklSelfService .simkl-modal-note:empty { display: none; }
     </style>
 
     <div class="simkl-head">
@@ -515,6 +527,14 @@
         </div>
     </div>
 
+    <div class="simkl-modal" id="simklModal" style="display:none;">
+        <div class="simkl-modal-box" role="dialog" aria-modal="true" aria-labelledby="simklModalTitle">
+            <div class="simkl-modal-head"><span id="simklModalTitle"></span><button type="button" class="simkl-modal-close" id="simklModalClose" aria-label="Close">&times;</button></div>
+            <pre class="simkl-modal-list" id="simklModalList"></pre>
+            <div class="simkl-modal-note" id="simklModalNote"></div>
+        </div>
+    </div>
+
     <script>
         (function () {
             'use strict';
@@ -673,12 +693,34 @@
                 panel.style.display = open ? '' : 'none';
                 el('simklHelpBtn').classList.toggle('is-open', open);
             });
-            function sbTile(value, label, kind) {
+            function openList(title, lines, total) {
+                el('simklModalTitle').textContent = title;
+                el('simklModalList').textContent = lines.join('\n');
+                el('simklModalNote').textContent = total > lines.length
+                    ? 'Showing the first ' + lines.length + ' of ' + total + ' item(s): the server keeps the list short.'
+                    : '';
+                el('simklModal').style.display = '';
+                document.addEventListener('keydown', onModalKey);
+            }
+            function closeList() {
+                el('simklModal').style.display = 'none';
+                document.removeEventListener('keydown', onModalKey);
+            }
+            function onModalKey(e) { if (e.key === 'Escape') { closeList(); } }
+            el('simklModalClose').addEventListener('click', closeList);
+            el('simklModal').addEventListener('click', function (e) { if (e.target === el('simklModal')) { closeList(); } });
+            function sbTile(value, label, kind, lines) {
                 var tile = document.createElement('div');
                 tile.className = 'simkl-sb-tile ' + (kind || '') + (Number(value) === 0 ? ' zero' : '');
                 var v = document.createElement('div'); v.className = 'v'; v.textContent = String(value);
                 var l = document.createElement('div'); l.className = 'l'; l.textContent = label;
                 tile.appendChild(v); tile.appendChild(l);
+                if (lines && lines.length && Number(value) > 0) {
+                    // A number you can open: the items behind it.
+                    tile.classList.add('clickable');
+                    tile.title = 'Show the items';
+                    tile.addEventListener('click', function () { openList(value + ' ' + label, lines, Number(value)); });
+                }
                 return tile;
             }
             function sbOp(text, badge, badgeClass, working) {
@@ -748,16 +790,21 @@
                 seg.classList.remove('flash'); void seg.offsetWidth; seg.classList.add('flash');
                 var tiles = el('simklSbTiles');
                 tiles.textContent = '';
+                // The list comes as lines prefixed + (mark), - (unmark) or > (send);
+                // an episode line carries its SxxEyy.
+                var allLines = pick(r, 'Lines') || [];
+                var isEp = function (t) { return /S\d+E\d+/.test(t); };
+                var sel = function (prefix, ep) { return allLines.filter(function (t) { return t.indexOf(prefix) === 0 && (ep === null || isEp(t) === ep); }).map(function (t) { return t.slice(2); }); };
                 if (!isUndo) {
                     if (isExport) {
-                        tiles.appendChild(sbTile(pick(r, 'MarkedEpisodes') || 0, isPreview ? 'episodes to send' : 'episodes sent', 't2'));
-                        tiles.appendChild(sbTile(pick(r, 'MarkedMovies') || 0, isPreview ? 'movies to send' : 'movies sent', 't2'));
+                        tiles.appendChild(sbTile(pick(r, 'MarkedEpisodes') || 0, isPreview ? 'episodes to send' : 'episodes sent', 't2', sel('> ', true)));
+                        tiles.appendChild(sbTile(pick(r, 'MarkedMovies') || 0, isPreview ? 'movies to send' : 'movies sent', 't2', sel('> ', false)));
                         tiles.appendChild(sbTile(pick(r, 'AlreadyPlayed') || 0, 'already on Simkl', ''));
                         tiles.appendChild(sbTile((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0), 'without usable ids', 'warn'));
                     } else {
-                        tiles.appendChild(sbTile(pick(r, 'MarkedEpisodes') || 0, isPreview ? 'episodes to mark' : 'episodes marked', 't1'));
-                        tiles.appendChild(sbTile(pick(r, 'MarkedMovies') || 0, isPreview ? 'movies to mark' : 'movies marked', 't1'));
-                        tiles.appendChild(sbTile(pick(r, 'Unmarked') || 0, isPreview ? 'to unmark' : 'unmarked', 't1'));
+                        tiles.appendChild(sbTile(pick(r, 'MarkedEpisodes') || 0, isPreview ? 'episodes to mark' : 'episodes marked', 't1', sel('+ ', true)));
+                        tiles.appendChild(sbTile(pick(r, 'MarkedMovies') || 0, isPreview ? 'movies to mark' : 'movies marked', 't1', sel('+ ', false)));
+                        tiles.appendChild(sbTile(pick(r, 'Unmarked') || 0, isPreview ? 'to unmark' : 'unmarked', 't1', sel('- ', null)));
                         tiles.appendChild(sbTile(pick(r, 'AlreadyPlayed') || 0, 'already played', ''));
                         if (pick(r, 'Excluded') > 0) { tiles.appendChild(sbTile(pick(r, 'Excluded'), 'in excluded libraries', '')); }
                         tiles.appendChild(sbTile((pick(r, 'UnmatchedEpisodes') || 0) + (pick(r, 'UnmatchedMovies') || 0), 'not in the library' + (pick(r, 'UnmatchedShows') > 0 ? ' (' + pick(r, 'UnmatchedShows') + ' unknown shows)' : ''), 'warn'));
