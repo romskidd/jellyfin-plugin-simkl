@@ -585,8 +585,10 @@
 
             function api(path, options) {
                 options = options || {};
+                // Jellyfin 12 only accepts the MediaBrowser authorization header
+                // (the old X-Emby-Token one answers 401); 10.11 accepts both.
                 options.headers = Object.assign({
-                    'X-Emby-Token': token,
+                    'Authorization': 'MediaBrowser Token="' + token + '", Client="RK Simkl Scrobbler", Device="Browser", DeviceId="rk-simkl-link", Version="1"',
                     'Content-Type': 'application/json'
                 }, options.headers || {});
                 return fetch(base + path, options).then(function (r) {
