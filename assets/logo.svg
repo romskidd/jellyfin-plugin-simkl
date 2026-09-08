@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <clipPath id="top"><rect x="0" y="0" width="120" height="57"/></clipPath>
+    <clipPath id="bottom"><rect x="0" y="65" width="120" height="60"/></clipPath>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="graphite" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a6067"/><stop offset="1" stop-color="#2a2e32"/>
+    </linearGradient>
+    <radialGradient id="tile" cx="30%" cy="20%" r="110%">
+      <stop offset="0" stop-color="#1f2326"/><stop offset="0.6" stop-color="#151719"/>
+    </radialGradient>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M46.58 80L37.94 80L26.65 66.55L37.61 66.55L46.58 77.14L46.58 80ZM16.12 80L7.75 80L7.75 41.17L38.58 41.17Q40.80 41.17 42.61 42.25Q44.41 43.33 45.52 45.17Q46.63 47.01 46.63 49.17L46.63 49.17L46.63 59.21Q46.63 61.37 45.52 63.21Q44.41 65.04 42.61 66.12Q40.80 67.20 38.58 67.20L38.58 67.20L16.12 67.26L16.12 80ZM16.12 58.78L16.12 58.78L38.15 58.78Q38.15 58.78 38.15 58.78Q38.15 58.78 38.15 58.78L38.15 58.78L38.15 49.54Q38.15 49.54 38.15 49.54Q38.15 49.54 38.15 49.54L38.15 49.54L16.12 49.54Q16.12 49.54 16.12 49.54Q16.12 49.54 16.12 49.54L16.12 49.54L16.12 58.78Q16.12 58.78 16.12 58.78Q16.12 58.78 16.12 58.78Z" fill="#ffffff" clip-path="url(#top)"/>
+    <path d="M82.98 80L74.56 80L74.56 41.12L82.98 41.12L82.98 56.35L90.60 56.35L103.34 41.12L112.09 41.12L112.09 44.04L98.21 60.56L112.09 77.08L112.09 80L103.34 80L90.60 64.77L82.98 64.77L82.98 80Z" fill="#ffffff" clip-path="url(#top)"/>
+    <path d="M46.58 80L37.94 80L26.65 66.55L37.61 66.55L46.58 77.14L46.58 80ZM16.12 80L7.75 80L7.75 41.17L38.58 41.17Q40.80 41.17 42.61 42.25Q44.41 43.33 45.52 45.17Q46.63 47.01 46.63 49.17L46.63 49.17L46.63 59.21Q46.63 61.37 45.52 63.21Q44.41 65.04 42.61 66.12Q40.80 67.20 38.58 67.20L38.58 67.20L16.12 67.26L16.12 80ZM16.12 58.78L16.12 58.78L38.15 58.78Q38.15 58.78 38.15 58.78Q38.15 58.78 38.15 58.78L38.15 58.78L38.15 49.54Q38.15 49.54 38.15 49.54Q38.15 49.54 38.15 49.54L38.15 49.54L16.12 49.54Q16.12 49.54 16.12 49.54Q16.12 49.54 16.12 49.54L16.12 49.54L16.12 58.78Q16.12 58.78 16.12 58.78Q16.12 58.78 16.12 58.78Z" fill="url(#graphite)" clip-path="url(#bottom)"/>
+    <path d="M82.98 80L74.56 80L74.56 41.12L82.98 41.12L82.98 56.35L90.60 56.35L103.34 41.12L112.09 41.12L112.09 44.04L98.21 60.56L112.09 77.08L112.09 80L103.34 80L90.60 64.77L82.98 64.77L82.98 80Z" fill="url(#graphite)" clip-path="url(#bottom)"/>
+  </g>
+  <path d="M6 61 H49 L55 48 L61 76 L66 55 L69 61 H108" fill="none" stroke="#ff9d00" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="113" cy="61" r="4.5" fill="#ffffff" stroke="#2a2e32" stroke-width="1.4" filter="url(#glow)"/>
+</svg>

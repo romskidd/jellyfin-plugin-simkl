@@ -6,7 +6,7 @@
         "overview": "Real-time Simkl scrobbling for Jellyfin (unofficial)",
         "owner": "romskidd",
         "category": "General",
-        "imageUrl": "",
+        "imageUrl": "https://romskidd.github.io/jellyfin-plugin-simkl-scrobbler/logo.png",
         "versions": [
             {
                 "version": "9.6.0.0",

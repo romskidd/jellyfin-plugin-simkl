@@ -1,3 +1,4 @@
+<p align="center"><img src="docs/logo.png" alt="RK Simkl Scrobbler logo" width="160"></p>
 <h1 align="center">RK Simkl Scrobbler for Jellyfin</h1>
 <h3 align="center">Real-time Simkl scrobbling for your Jellyfin server</h3>
 <p align="center">
